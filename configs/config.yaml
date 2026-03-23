@@ -1,0 +1,16 @@
+data:
+  train_dir: data/train
+  val_dir: data/val
+  batch_size: 16
+
+model:
+  num_classes: 2
+  freeze_backbone: true
+
+training:
+  epochs: 3
+  learning_rate: 0.001
+  early_stopping_patience: 3
+
+system:
+  device: cuda
