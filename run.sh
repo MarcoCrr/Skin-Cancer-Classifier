@@ -1,3 +1,3 @@
 #!/bin/bash
-source venv/bin/activate
-python src/train.py
+conda activate torch_env
+python src/train.py --config configs/config.yaml
