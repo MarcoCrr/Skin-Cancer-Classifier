@@ -2,7 +2,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 def get_model(num_classes=2, freeze_backbone=True):
-    model = models.resnet18(pretrained=True)
+    model = models.resnet18(weights="IMAGENET1K_V1")
     
     if freeze_backbone:
         for param in model.parameters():
