@@ -3,7 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from data import get_dataloaders
 from model import get_model
+import argparse
 
+parser = argparse.ArgumentParser(description="Visualize model predictions")
+parser.add_argument("--mistakes_only", action="store_true",
+                    help="Show only incorrect predictions")
+args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -40,7 +45,10 @@ with torch.no_grad():
 
         for i in range(images.size(0)):
             
-
+            # choosing "mistakes only plot" or not
+            is_mistake = preds[i] != labels[i]
+            if args.mistakes_only and not is_mistake:
+                continue
 
             images_shown += 1
             plt.subplot(2, 4, images_shown)
