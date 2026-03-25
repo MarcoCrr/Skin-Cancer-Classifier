@@ -26,7 +26,9 @@ model = get_model()
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.fc.parameters(), lr=config["training"]["learning_rate"])
+optimizer = optim.Adam(model.fc.parameters(),
+                       lr=config["training"]["learning_rate"],
+                       weight_decay=config["training"]["weight_decay"])
 
 epochs = config["training"]["epochs"]  # 3, toy project
 
