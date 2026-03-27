@@ -1,7 +1,6 @@
-import json
 import torch
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from src.train import train
 

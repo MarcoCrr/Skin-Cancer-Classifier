@@ -1,6 +1,4 @@
-import pytest
 import pandas as pd
-from pathlib import Path
 from types import SimpleNamespace
 
 from src.prepare_data import map_label, create_dirs, main
