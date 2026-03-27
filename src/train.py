@@ -72,4 +72,5 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
     with open("logs/config_used.json", "w") as f: #TODO: add date or whatever to distinguish the files
         json.dump(config, f, indent=4)
+        
     main(args)
