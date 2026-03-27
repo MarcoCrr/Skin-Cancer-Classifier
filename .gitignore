@@ -40,3 +40,7 @@ kaggle.json
 # Others
 MY_TODO.txt
 src/train_old.py
+.coverage
+pytest.ini
+src/__init__.py
+
