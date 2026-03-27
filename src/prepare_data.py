@@ -89,8 +89,5 @@ if __name__ == "__main__":
                         help="Validation split ratio")
     parser.add_argument("--sample_size", type=int, default=2000,
                         help="Number of samples to use (None = all)")
-    parser.add_argument("--config", type=str, default="configs/config.yaml",
-                        help="Path to config/input file")
-
     args = parser.parse_args()
     main(args)
