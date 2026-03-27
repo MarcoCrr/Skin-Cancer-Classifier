@@ -5,9 +5,9 @@ import yaml
 import json
 import argparse
 
-from data import get_dataloaders
-from model import get_model
-from trainer import train_one_epoch, evaluate, should_stop_early
+from src.data import get_dataloaders
+from src.model import get_model
+from src.trainer import train_one_epoch, evaluate, should_stop_early
 
 
 
