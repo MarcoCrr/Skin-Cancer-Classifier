@@ -16,14 +16,17 @@ data/*
 !data/.gitkeep
 
 # Models
-models/
-*.pth
+models/*
+!models/.gitkeep
 
 # Configs
-configs/
+configs/*
+!configs/.gitkeep
+!configs/config.yaml
 
 # Logs
 logs/
+!logs/.gitkeep
 
 # OS / Editor
 .DS_Store
