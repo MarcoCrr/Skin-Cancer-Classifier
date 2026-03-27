@@ -1,4 +1,4 @@
-import pytest
+
 import torch
 from pathlib import Path
 from PIL import Image
