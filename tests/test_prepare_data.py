@@ -81,10 +81,10 @@ def test_main_handles_missing_images(tmp_path):
     img_dir = data_dir / "HAM10000_images_part_1"
     img_dir.mkdir(parents=True)
 
-    # Metadata references non-existing image
+    # Create MULTIPLE rows to avoid sklearn split error
     df = pd.DataFrame({
-        "image_id": ["missing_img"],
-        "dx": ["mel"]
+        "image_id": ["missing1", "missing2", "missing3", "missing4"],
+        "dx": ["mel", "nv", "mel", "nv"]
     })
 
     metadata_path = data_dir / "HAM10000_metadata.csv"
@@ -100,5 +100,5 @@ def test_main_handles_missing_images(tmp_path):
     # Should not crash
     main(args)
 
-    # No images copied
+    # No images copied (because all are missing)
     assert len(list(output_dir.rglob("*.jpg"))) == 0
