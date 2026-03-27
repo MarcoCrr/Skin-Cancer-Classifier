@@ -4,7 +4,6 @@ import torch.optim as optim
 import yaml
 import json
 import argparse
-from pathlib import Path
 
 from data import get_dataloaders
 from model import get_model
@@ -58,9 +57,6 @@ def train(config):
     return best_acc
 
 
-def main(args):
-    train(config)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -72,5 +68,5 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
     with open("logs/config_used.json", "w") as f: #TODO: add date or whatever to distinguish the files
         json.dump(config, f, indent=4)
-        
-    main(args)
+
+    train(config)
