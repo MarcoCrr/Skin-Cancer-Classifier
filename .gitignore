@@ -19,6 +19,9 @@ data/*
 models/
 *.pth
 
+# Configs
+configs/
+
 # Logs
 logs/
 
