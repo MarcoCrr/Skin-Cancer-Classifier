@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default="configs/config.yaml")
 args = parser.parse_args()
 
-with open("configs/config.yaml", "r") as f:
+with open(args.config, "r") as f:
     config = yaml.safe_load(f)
 with open("logs/config_used.json", "w") as f: #TODO: add date or whatever to distinguish the files
     json.dump(config, f, indent=4)
