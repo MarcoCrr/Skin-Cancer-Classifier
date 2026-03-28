@@ -96,7 +96,14 @@ def load_model(model_path, device):
     checkpoint = torch.load(model_path, map_location=device)
 
     model = get_model(num_classes=checkpoint["num_classes"])
-    model.load_state_dict(checkpoint["model_state_dict"])
+    try:
+        model.load_state_dict(checkpoint["model_state_dict"])
+    except RuntimeError:
+        raise RuntimeError(
+            "Checkpoint is incompatible with current model. "
+            "You likely changed the architecture."
+        )
+
     return model.to(device)
 
 
