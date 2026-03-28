@@ -48,7 +48,10 @@ def train(config):
 
         if best_model:
             best_acc = val_acc
-            torch.save(model.state_dict(), "models/best_model.pth")
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "num_classes": config["model"]["num_classes"],
+            }, "models/best_model.pth")
 
         if counter >= patience:
             print("Early stopping triggered")

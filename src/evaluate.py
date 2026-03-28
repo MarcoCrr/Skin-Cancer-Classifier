@@ -46,9 +46,9 @@ def compute_metrics(all_labels, all_preds):
     """
 
     labels = [0, 1]
-    precision = precision_score(all_labels, all_preds)
-    recall = recall_score(all_labels, all_preds)
-    cm = confusion_matrix(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average="macro", zero_division=0)
+    recall = recall_score(all_labels, all_preds, average="macro", zero_division=0)
+    cm = confusion_matrix(all_labels, all_preds, labels=[0, 1])
 
     report = classification_report(
         all_labels,
@@ -93,8 +93,10 @@ def load_model(model_path, device):
     Returns:
         torch.nn.Module: Loaded model.
     """
-    model = get_model()
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    checkpoint = torch.load(model_path, map_location=device)
+
+    model = get_model(num_classes=checkpoint["num_classes"])
+    model.load_state_dict(checkpoint["model_state_dict"])
     return model.to(device)
 
 
