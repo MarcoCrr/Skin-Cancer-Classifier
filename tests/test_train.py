@@ -23,6 +23,9 @@ def dummy_config():
             "learning_rate": 0.001,
             "weight_decay": 0.0,
             "early_stopping_patience": 2
+        },
+        "model": {
+            "num_classes": 2
         }
     }
 
