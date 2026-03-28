@@ -44,10 +44,19 @@ def compute_metrics(all_labels, all_preds):
     Returns:
         dict: Dictionary with precision, recall, confusion matrix, report.
     """
+
+    labels = [0, 1]
     precision = precision_score(all_labels, all_preds)
     recall = recall_score(all_labels, all_preds)
     cm = confusion_matrix(all_labels, all_preds)
-    report = classification_report(all_labels, all_preds, target_names=["benign", "malignant"])
+
+    report = classification_report(
+        all_labels,
+        all_preds,
+        labels=labels,
+        target_names=["benign", "malignant"],
+        zero_division=0
+    )
 
     return {
         "precision": precision,
