@@ -1,5 +1,5 @@
 import torch
-import pytest
+from unittest.mock import patch, MagicMock
 
 from src.evaluate import collect_predictions, compute_metrics, evaluate
 
@@ -77,3 +77,31 @@ def test_collect_predictions_device_cpu():
 
     assert isinstance(preds, list)
     assert isinstance(labels, list)
+
+
+def test_main_runs(tmp_path):
+    fake_loader = [ (torch.randn(2,3,224,224), torch.zeros(2, dtype=torch.long)) ]
+
+    fake_metrics = {
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [[1,0],[0,1]],
+        "report": "ok"
+    }
+
+    with patch("src.evaluate.get_dataloaders") as mock_data, \
+         patch("src.evaluate.load_model") as mock_model, \
+         patch("src.evaluate.evaluate") as mock_eval:
+
+        mock_data.return_value = (None, fake_loader)
+        mock_model.return_value = MagicMock()
+        mock_eval.return_value = fake_metrics
+
+        # Redirect logs folder
+        with patch("builtins.open") as mock_open:
+            from src.evaluate import main
+            main()
+
+            mock_data.assert_called_once()
+            mock_model.assert_called_once()
+            mock_eval.assert_called_once()
