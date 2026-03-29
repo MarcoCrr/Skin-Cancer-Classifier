@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from src.data import get_dataloaders
 from src.model import get_model
+import numpy as np
 import argparse
 import yaml
 
@@ -23,6 +24,12 @@ def load_config(config_path):
 def load_model(model_path, device):
     """
     Load model weights from disk.
+    Supports both:
+    - new format: dict with metadata
+    - old format: raw state_dict
+
+    I'm inserting this if/else since there might be old checkpoints
+    without metadata. Backward compatibility.
 
     Args:
         model_path (str): Path to saved model.
@@ -33,32 +40,30 @@ def load_model(model_path, device):
     """
     checkpoint = torch.load(model_path, map_location=device)
 
-    model = get_model(num_classes=checkpoint["num_classes"])
-    try:
-        model.load_state_dict(checkpoint["model_state_dict"])
-    except RuntimeError:
-        raise RuntimeError(
-            "Checkpoint is incompatible with current model. "
-            "You likely changed the architecture."
-        )
+    # Case 1: new format (dict with metadata)
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        num_classes = checkpoint.get("num_classes", 2)
+        model = get_model(num_classes=num_classes)
+
+        try:
+            model.load_state_dict(checkpoint["model_state_dict"])
+        except RuntimeError:
+            raise RuntimeError(
+                "Checkpoint is incompatible with current model."
+            )
+
+    # Case 2: old format (just state_dict)
+    else:
+        model = get_model()
+        try:
+            model.load_state_dict(checkpoint)
+        except RuntimeError:
+            raise RuntimeError(
+                "Old checkpoint incompatible with current model. "
+                "You likely changed architecture (e.g., dummy model vs ResNet)."
+            )
 
     return model.to(device)
-
-# def load_model(model_path, device):
-#     """
-#     Load trained model from checkpoint.
-
-#     Args:
-#         model_path (str): Path to saved model.
-#         device (str): Device.
-
-#     Returns:
-#         torch.nn.Module: Loaded model.
-#     """
-#     checkpoint = torch.load(model_path, map_location=device)
-#     model = get_model(num_classes=checkpoint.get("num_classes", 2))
-#     model.load_state_dict(checkpoint["model_state_dict"])
-#     return model.to(device)
 
 
 def imshow(img):
