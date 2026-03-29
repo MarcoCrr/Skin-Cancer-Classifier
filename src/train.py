@@ -56,7 +56,8 @@ def train(config):
                 "model_state_dict": model.state_dict(),
                 "num_classes": config["model"]["num_classes"],
                 "model_name": "resnet18",
-            }, "models/best_model.pth")
+                "version": 1,
+            }, "models/best_model.pth"),
 
         if counter >= patience:
             print("Early stopping triggered")

@@ -24,6 +24,18 @@ def load_config(config_path):
         return yaml.safe_load(f)
 
 
+def validate_checkpoint(checkpoint):
+    """
+    Validate checkpoint structure.
+    """
+    if not isinstance(checkpoint, dict):
+        raise ValueError("Checkpoint must be a dictionary.")
+
+    if "model_state_dict" in checkpoint:
+        if "num_classes" not in checkpoint:
+            raise ValueError("Checkpoint missing 'num_classes'.")
+
+
 def load_model(model_path, device):
     """
     Load model weights from disk.
@@ -42,31 +54,39 @@ def load_model(model_path, device):
         torch.nn.Module: Loaded model.
     """
     checkpoint = torch.load(model_path, map_location=device)
+    validate_checkpoint(checkpoint)
 
-    # Case 1: new format (dict with metadata)
+
+    # Case 1: new format
     if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
         num_classes = checkpoint.get("num_classes", 2)
         model = get_model(num_classes=num_classes)
 
         try:
             model.load_state_dict(checkpoint["model_state_dict"])
-        except RuntimeError:
+        except RuntimeError as e:
             raise RuntimeError(
-                "Checkpoint is incompatible with current model."
+                f"Incompatible checkpoint (new format): {e}"
             )
 
-    # Case 2: old format (just state_dict)
-    else:
+        return model.to(device)
+
+    # Case 2: old format (state_dict only)
+    elif isinstance(checkpoint, dict):
         model = get_model()
+
         try:
             model.load_state_dict(checkpoint)
+            print("Loaded legacy checkpoint (no metadata).")
+            return model.to(device)
         except RuntimeError:
             raise RuntimeError(
-                "Old checkpoint incompatible with current model. "
-                "You likely changed architecture (e.g., dummy model vs ResNet)."
+                "Legacy checkpoint incompatible with current model. "
+                "This file was likely created with a different architecture."
             )
 
-    return model.to(device)
+    else:
+        raise RuntimeError("Invalid checkpoint format.")
 
 
 def imshow(img):
@@ -312,6 +332,7 @@ def plot_precision_recall_curve(labels, probs,
 
     plt.savefig(save_path)
     plt.close()
+    print(f"Precision-Recall curve saved to {save_path} with AP = {ap_score:.2f}")
 
     return ap_score
 
@@ -349,7 +370,7 @@ def run_visualization(config_path, model_path,
 
     plot_confusion_matrix(cm, ["benign", "malignant"])
     plot_roc_curve(labels, probs)
-    # plot_precision_recall_curve(labels, probs)
+    plot_precision_recall_curve(labels, probs)
 
     plot_predictions(
         images, preds, labels, confs,
