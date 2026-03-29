@@ -37,12 +37,16 @@ def train(config):
     best_acc = 0
     counter = 0
 
-    for epoch in range(epochs):
+    for epoch in range(1, epochs+1):
 
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
         val_acc = evaluate(model, val_loader, device)
 
-        f.write(f"{epoch},{train_loss},{val_acc}\n") # easy to parse
+        line = f"{epoch},{train_loss},{val_acc}\n" # easy to parse
+        line_info = f"Epoch {epoch}: Train Loss={train_loss:.4f}, Val Acc={val_acc:.4f}"
+        with open("logs/train_log.txt", "a") as f:
+            f.write(line)
+        print(line_info)
 
         best_model, counter = should_stop_early(val_acc, best_acc, counter)
 
