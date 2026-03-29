@@ -230,6 +230,59 @@ def plot_confusion_matrix(cm, class_names,
     print(f"Confusion matrix saved to {save_path}")
 
 
+def load_training_log(log_path):
+    """
+    Load training log file.
+
+    Expected format per line:
+        epoch,train_loss,val_acc
+
+    Args:
+        log_path (str): Path to log file.
+
+    Returns:
+        tuple: (epochs, train_losses, val_accuracies)
+    """
+    epochs = []
+    train_losses = []
+    val_accuracies = []
+
+    with open(log_path, "r") as f:
+        for line in f:
+            epoch, loss, acc = line.strip().split(",")
+            epochs.append(int(epoch))
+            train_losses.append(float(loss))
+            val_accuracies.append(float(acc))
+
+    return epochs, train_losses, val_accuracies
+
+
+def plot_training_curves(epochs, train_losses, val_accuracies,
+                         save_path="logs/training_curves.png"):
+    """
+    Plot training loss and validation accuracy over epochs.
+
+    Args:
+        epochs (list)
+        train_losses (list)
+        val_accuracies (list)
+        save_path (str)
+    """
+    plt.figure()
+
+    plt.plot(epochs, train_losses, label="Train Loss")
+    plt.plot(epochs, val_accuracies, label="Val Accuracy")
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Value")
+    plt.title("Training Curves")
+    plt.legend()
+
+    plt.savefig(save_path)
+    plt.close()
+    print(f"Training curves saved to {save_path}")
+
+
 #################################################################
 
 def run_visualization(config_path, model_path,
@@ -269,6 +322,11 @@ def run_visualization(config_path, model_path,
         mistakes_only=mistakes_only,
         max_images=num_images
     )
+    try:
+        epochs, losses, accs = load_training_log("logs/train_log.txt")
+        plot_training_curves(epochs, losses, accs)
+    except FileNotFoundError:
+        print("Training log not found, skipping training curves.")
 
 
 def main():
