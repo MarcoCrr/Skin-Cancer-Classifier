@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 import yaml
 from sklearn.metrics import confusion_matrix, roc_curve, auc
+from sklearn.metrics import precision_recall_curve, average_precision_score
 
 
 
@@ -283,6 +284,38 @@ def plot_training_curves(epochs, train_losses, val_accuracies,
     print(f"Training curves saved to {save_path}")
 
 
+def plot_precision_recall_curve(labels, probs,
+                                save_path="logs/precision_recall_curve.png"):
+    """
+    Plot Precision-Recall curve.
+
+    Args:
+        labels (list or array): Ground truth labels (0/1).
+        probs (list or array): Probabilities for positive class (class 1).
+        save_path (str): Path to save the plot.
+
+    Returns:
+        float: Average precision (AP) score.
+    """
+    precision, recall, _ = precision_recall_curve(labels, probs)
+    ap_score = average_precision_score(labels, probs)
+
+    plt.figure()
+    plt.plot(recall, precision, label=f"AP = {ap_score:.2f}")
+    baseline = sum(labels) / len(labels)
+    plt.hlines(baseline, 0, 1, linestyles="dashed", label="Baseline")
+
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title("Precision-Recall Curve")
+    plt.legend()
+
+    plt.savefig(save_path)
+    plt.close()
+
+    return ap_score
+
+
 #################################################################
 
 def run_visualization(config_path, model_path,
@@ -299,7 +332,8 @@ def run_visualization(config_path, model_path,
     """
     config = load_config(config_path)
 
-    device = config["system"]["device"] if torch.cuda.is_available() else "cpu"
+    # device = config["system"]["device"] if torch.cuda.is_available() else "cpu"
+    device = 'cpu'
 
     _, val_loader = get_dataloaders(
         config["data"]["train_dir"],
@@ -315,6 +349,7 @@ def run_visualization(config_path, model_path,
 
     plot_confusion_matrix(cm, ["benign", "malignant"])
     plot_roc_curve(labels, probs)
+    # plot_precision_recall_curve(labels, probs)
 
     plot_predictions(
         images, preds, labels, confs,
