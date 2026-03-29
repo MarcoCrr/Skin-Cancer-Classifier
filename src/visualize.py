@@ -6,15 +6,6 @@ from model import get_model
 import argparse
 import yaml
 
-parser = argparse.ArgumentParser(description="Visualize model predictions")
-parser.add_argument("--mistakes_only", action="store_true",
-                    help="Show only incorrect predictions")
-parser.add_argument("--num_images", type=int, default=8)
-parser.add_argument("--model", type=str, default="models/best_model.pth",
-                    help="Path to trained model")
-parser.add_argument("--config", type=str, default="configs/config.yaml",
-                    help="Path to config/input file")
-args = parser.parse_args()
 
 with open(args.config, "r") as f:
     config = yaml.safe_load(f)
@@ -78,3 +69,29 @@ with torch.no_grad():
                 plt.savefig("logs/predictions.png")
                 plt.show()
                 exit()
+
+
+def main():
+    """
+    CLI entry point.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Visualize model predictions")
+    parser.add_argument("--mistakes_only", action="store_true", help="Show only incorrect predictions")
+    parser.add_argument("--num_images", type=int, default=8, help="Number of images to display")
+    parser.add_argument("--model", type=str, default="models/best_model.pth", help="Path to trained model")
+    parser.add_argument("--config", type=str, default="configs/config.yaml", help="Path to config file")
+
+    args = parser.parse_args()
+
+    run_visualization(
+        args.config,
+        args.model,
+        mistakes_only=args.mistakes_only,
+        num_images=args.num_images
+    )
+
+
+if __name__ == "__main__":
+    main()
