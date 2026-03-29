@@ -5,6 +5,8 @@ from src.model import get_model
 import numpy as np
 import argparse
 import yaml
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+
 
 
 def load_config(config_path):
@@ -88,11 +90,11 @@ def get_predictions(model, dataloader, device):
         device (str)
 
     Returns:
-        tuple: (images, preds, labels, confidences)
+        tuple: (images, preds, labels, confidences, positive_class_probs)
     """
     model.eval()
 
-    all_images, all_preds, all_labels, all_confs = [], [], [], []
+    all_images, all_preds, all_labels, all_confs, all_probs = [], [], [], [], []
 
     with torch.no_grad():
         for images, labels in dataloader:
@@ -101,13 +103,15 @@ def get_predictions(model, dataloader, device):
 
             probs = torch.softmax(outputs, dim=1)
             confs, preds = torch.max(probs, 1)
+            positive_probs = probs[:, 1]
 
             all_images.extend(images.cpu())
             all_preds.extend(preds.cpu())
             all_labels.extend(labels.cpu())
             all_confs.extend(confs.cpu())
+            all_probs.extend(positive_probs.cpu().numpy())
 
-    return all_images, all_preds, all_labels, all_confs
+    return all_images, all_preds, all_labels, all_confs, all_probs
 
 
 def plot_predictions(images, preds, labels, confs,
@@ -157,7 +161,76 @@ def plot_predictions(images, preds, labels, confs,
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
+    print(f"Predictions plot saved to {save_path}")
 
+
+def plot_roc_curve(labels, probs, save_path="logs/roc_curve.png"):
+    """
+    Plot ROC curve.
+
+    Args:
+        labels (list or array): Ground truth labels (0/1).
+        probs (list or array): Probabilities for positive class (class 1).
+        save_path (str): Path to save the plot.
+
+    Returns:
+        float: Computed AUC score.
+    """
+    fpr, tpr, _ = roc_curve(labels, probs)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure()
+    plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.2f}")
+    plt.plot([0, 1], [0, 1], linestyle="--")  # random baseline
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+    plt.legend()
+
+    plt.savefig(save_path)
+    plt.close()
+    print(f"ROC curve saved to {save_path} with AUC = {roc_auc:.2f}")
+
+    return roc_auc
+
+
+def plot_confusion_matrix(cm, class_names,
+                          save_path="logs/confusion_matrix.png"):
+    """
+    Plot confusion matrix as heatmap.
+
+    Args:
+        cm (np.ndarray): Confusion matrix.
+        class_names (list): Class labels.
+        save_path (str): Path to save plot.
+    """
+    plt.figure()
+
+    plt.imshow(cm, interpolation="nearest")
+    plt.title("Confusion Matrix")
+    plt.colorbar()
+
+    ticks = np.arange(len(class_names))
+    plt.xticks(ticks, class_names)
+    plt.yticks(ticks, class_names)
+
+    # Annotate cells
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            plt.text(j, i, cm[i, j],
+                     ha="center", va="center")
+
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    print(f"Confusion matrix saved to {save_path}")
+
+
+#################################################################
 
 def run_visualization(config_path, model_path,
                      mistakes_only=False,
@@ -183,7 +256,12 @@ def run_visualization(config_path, model_path,
 
     model = load_model(model_path, device)
 
-    images, preds, labels, confs = get_predictions(model, val_loader, device)
+    images, preds, labels, confs, probs = get_predictions(model, val_loader, device)
+
+    cm = confusion_matrix(labels, preds, labels=[0, 1])
+
+    plot_confusion_matrix(cm, ["benign", "malignant"])
+    plot_roc_curve(labels, probs)
 
     plot_predictions(
         images, preds, labels, confs,
