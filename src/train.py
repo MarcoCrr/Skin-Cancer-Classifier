@@ -42,7 +42,7 @@ def train(config):
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
         val_acc = evaluate(model, val_loader, device)
 
-        print(f"Epoch {epoch}: loss={train_loss:.4f}, val_acc={val_acc:.4f}")
+        f.write(f"{epoch},{train_loss},{val_acc}\n") # easy to parse
 
         best_model, counter = should_stop_early(val_acc, best_acc, counter)
 
