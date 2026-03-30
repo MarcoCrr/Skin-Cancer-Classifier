@@ -11,6 +11,8 @@ from src.visualize import (
     plot_training_curves,
     plot_precision_recall_curve,
 )
+from src.visualize import get_predictions, plot_predictions
+from src.visualize import validate_checkpoint, load_model
 
 
 def test_load_config(tmp_path):
@@ -55,6 +57,15 @@ def test_plot_precision_recall_curve(tmp_path):
     assert out.exists()
 
 
+def test_plot_confusion_matrix(tmp_path):
+    cm = np.array([[2, 1], [0, 3]])
+    out = tmp_path / "cm.png"
+
+    plot_confusion_matrix(cm, ["a", "b"], save_path=out)
+
+    assert out.exists()
+
+
 def test_plot_training_curves(tmp_path):
     epochs = [0, 1, 2]
     losses = [0.5, 0.4, 0.3]
@@ -66,4 +77,51 @@ def test_plot_training_curves(tmp_path):
 
     assert out.exists()
 
+#################################################################################
 
+class DummyModel(torch.nn.Module):
+    def forward(self, x):
+        return torch.tensor([[0.1, 0.9]] * x.shape[0])
+    
+def dummy_loader():
+    images = torch.randn(4, 3, 224, 224)
+    labels = torch.tensor([0, 1, 0, 1])
+    return [(images, labels)]
+
+def test_get_predictions():
+    model = DummyModel()
+    loader = dummy_loader()
+
+    images, preds, labels, confs, probs = get_predictions(model, loader, "cpu")
+
+    assert len(images) == 4
+    assert len(preds) == 4
+    assert len(labels) == 4
+    assert len(confs) == 4
+    assert len(probs) == 4
+
+
+def test_plot_predictions(tmp_path):
+    images = [torch.randn(3, 224, 224) for _ in range(4)]
+    preds = [0, 1, 0, 1]
+    labels = [0, 0, 0, 1]
+    confs = [0.9, 0.8, 0.7, 0.6]
+
+    out = tmp_path / "preds.png"
+
+    plot_predictions(
+        images, preds, labels, confs,
+        class_names=["a", "b"],
+        save_path=out
+    )
+
+    assert out.exists()
+
+
+def test_validate_checkpoint_valid():
+    checkpoint = {
+        "model_state_dict": {},
+        "num_classes": 2
+    }
+
+    validate_checkpoint(checkpoint)
