@@ -39,8 +39,7 @@ The project emphasizes a clean architecture and contains  model evaluation, visu
 ### Installation
 Clone repository
 ```
-git clone <insert your-repo-url!>
-cd <insert repo-name!!!>
+git clone https://github.com/MarcoCrr/Skin-Cancer-Classifier.git
 ```
 
 ### Create environment (recommended)
