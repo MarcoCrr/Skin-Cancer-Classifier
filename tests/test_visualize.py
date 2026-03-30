@@ -13,6 +13,8 @@ from src.visualize import (
 )
 from src.visualize import get_predictions, plot_predictions
 from src.visualize import validate_checkpoint, load_model
+from unittest.mock import patch
+from src.visualize import run_visualization
 
 
 def test_load_config(tmp_path):
@@ -125,3 +127,36 @@ def test_validate_checkpoint_valid():
     }
 
     validate_checkpoint(checkpoint)
+
+
+def test_validate_checkpoint_invalid():
+    with pytest.raises(ValueError):
+        validate_checkpoint("not_a_dict")
+
+
+def test_run_visualization(tmp_path):
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("""
+                            system:
+                                device: cpu
+                            data:
+                                train_dir: dummy
+                                val_dir: dummy
+                            """)
+
+    with patch("src.visualize.get_dataloaders") as mock_loader, \
+         patch("src.visualize.load_model") as mock_model, \
+         patch("src.visualize.get_predictions") as mock_preds:
+
+        mock_loader.return_value = (None, dummy_loader())
+        mock_model.return_value = DummyModel()
+
+        mock_preds.return_value = (
+            [torch.randn(3, 224, 224)] * 4,
+            [0, 1, 0, 1],
+            [0, 1, 0, 1],
+            [0.9, 0.8, 0.7, 0.6],
+            [0.1, 0.9, 0.2, 0.8]
+        )
+
+        run_visualization(config_file, "dummy_model.pth")
