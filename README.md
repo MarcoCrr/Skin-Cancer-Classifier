@@ -1,5 +1,7 @@
 # Skin Cancer Classification with PyTorch
 
+[![codecov](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier/graph/badge.svg?token=5INB1F11SK)](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier)
+
 A deep learning project for binary skin cancer classification using the HAM10000 dataset and PyTorch.
 The project emphasizes a clean architecture and contains  model evaluation, visualization, and testing.
 
@@ -49,7 +51,7 @@ conda activate torch_env
 
 ### Install dependencies
 ```
-pip install -r requirements.txt (TODO!)
+pip install -r requirements.txt
 ```
 
 ### Dataset
