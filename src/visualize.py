@@ -39,12 +39,6 @@ def validate_checkpoint(checkpoint):
 def load_model(model_path, device):
     """
     Load model weights from disk.
-    Supports both:
-    - new format: dict with metadata
-    - old format: raw state_dict
-
-    I'm inserting this if/else since there might be old checkpoints
-    without metadata. Backward compatibility.
 
     Args:
         model_path (str): Path to saved model.
@@ -54,39 +48,22 @@ def load_model(model_path, device):
         torch.nn.Module: Loaded model.
     """
     checkpoint = torch.load(model_path, map_location=device)
-    validate_checkpoint(checkpoint)
 
-
-    # Case 1: new format
-    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
-        num_classes = checkpoint.get("num_classes", 2)
-        model = get_model(num_classes=num_classes)
-
-        try:
-            model.load_state_dict(checkpoint["model_state_dict"])
-        except RuntimeError as e:
-            raise RuntimeError(
-                f"Incompatible checkpoint (new format): {e}"
-            )
-
-        return model.to(device)
-
-    # Case 2: old format (state_dict only)
-    elif isinstance(checkpoint, dict):
-        model = get_model()
-
-        try:
-            model.load_state_dict(checkpoint)
-            print("Loaded legacy checkpoint (no metadata).")
-            return model.to(device)
-        except RuntimeError:
-            raise RuntimeError(
-                "Legacy checkpoint incompatible with current model. "
-                "This file was likely created with a different architecture."
-            )
-
-    else:
+    if "model_state_dict" not in checkpoint:
         raise RuntimeError("Invalid checkpoint format.")
+
+    num_classes = checkpoint.get("num_classes", 2)
+    fc_in_features = checkpoint.get("fc_in_features")
+
+    model = get_model(num_classes=num_classes)
+
+    # final fix? if old checkpoint without fc_in_features, just load state dict and hope it works
+    if fc_in_features is not None:
+        model.fc = torch.nn.Linear(fc_in_features, num_classes)
+
+    model.load_state_dict(checkpoint["model_state_dict"])
+
+    return model.to(device)
 
 
 def imshow(img):

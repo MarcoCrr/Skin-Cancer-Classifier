@@ -57,6 +57,7 @@ def train(config):
                 "num_classes": config["model"]["num_classes"],
                 "model_name": "resnet18",
                 "version": 1,
+                "fc_in_features": model.fc.in_features,
             }, "models/best_model.pth"),
 
         if counter >= patience:
