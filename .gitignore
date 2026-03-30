@@ -27,6 +27,7 @@ configs/*
 # Logs
 logs/*
 !logs/.gitkeep
+!logs/*.png
 
 # OS / Editor
 .DS_Store

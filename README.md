@@ -40,6 +40,26 @@ The project emphasizes a clean architecture and contains  model evaluation, visu
 ├── README.md
 ```
 
+
+## Examples: Results & Visualizations
+**Notice**: this is a modest-sized project, which goal is not to compete with more elaborate methods but rather to show how to set up a solid ML project, with good programming practices et cetera. Its performance can be greatly improved with some tweaks and improvements (the number of false negatives is a perfect example of this).
+
+### Confusion Matrix
+![Confusion Matrix](logs/confusion_matrix.png)
+
+### ROC Curve
+![ROC Curve](logs/roc_curve.png)
+
+### Precision-Recall Curve
+![PR Curve](logs/precision_recall_curve.png)
+
+### Predictions
+![Predictions](logs/predictions.png)
+
+### Training Curves
+![Training](logs/training_curves.png)
+
+
 ### Installation
 Clone repository
 ```
