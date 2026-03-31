@@ -8,9 +8,9 @@ model:
   freeze_backbone: true
 
 training:
-  epochs: 3
+  epochs: 30
   learning_rate: 0.001
-  weight_decay: 0
+  weight_decay: 0.0001
   early_stopping_patience: 3
 
 system:
