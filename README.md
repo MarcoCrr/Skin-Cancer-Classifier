@@ -42,7 +42,7 @@ The project emphasizes a clean architecture and contains  model evaluation, visu
 
 
 ## Examples: Results & Visualizations
-**Notice**: this is a modest-sized project, which goal is not to compete with more elaborate methods but rather to show how to set up a solid ML project, with good programming practices et cetera. Its performance can be greatly improved with some tweaks and improvements (the number of false negatives is a perfect example of this).
+**Notice**: this is a modest-sized project, whose goal is not to compete with more elaborate methods but rather to show how to set up a solid ML project, with good programming practices, et cetera. Its performance can be greatly improved with some tweaks and improvements (the number of false negatives is a perfect example of this).
 
 ### Confusion Matrix
 ![Confusion Matrix](logs/confusion_matrix.png)
