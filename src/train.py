@@ -58,7 +58,7 @@ def train(config):
                 "model_name": "resnet18",
                 "version": 1,
                 "fc_in_features": model.fc.in_features,
-            }, "models/best_model.pth"),
+            }, "models/best_model.pth")
 
         if counter >= patience:
             print("Early stopping triggered")
