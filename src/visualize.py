@@ -49,6 +49,11 @@ def load_model(model_path, device):
     """
     checkpoint = torch.load(model_path, map_location=device)
 
+    print("Loading:", model_path)
+    if "model_state_dict" in checkpoint:
+        print("Checkpoint fc:", checkpoint["model_state_dict"]["fc.weight"].shape)
+    else:
+        print("Checkpoint fc:", checkpoint["fc.weight"].shape)
     if "model_state_dict" not in checkpoint:
         raise RuntimeError("Invalid checkpoint format.")
 
@@ -56,6 +61,7 @@ def load_model(model_path, device):
     fc_in_features = checkpoint.get("fc_in_features")
 
     model = get_model(num_classes=num_classes)
+    print("Model fc:", model.fc.weight.shape)
 
     # final fix? if old checkpoint without fc_in_features, just load state dict and hope it works
     if fc_in_features is not None:
