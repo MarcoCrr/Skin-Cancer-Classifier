@@ -2,9 +2,13 @@ import argparse
 import time
 
 import torch
+import platform
 
 from src.data import get_dataloaders
 from src.model import get_model
+
+from datetime import datetime
+from pathlib import Path
 
 
 def synchronize(device):
@@ -188,44 +192,93 @@ def benchmark_training(
     return results
 
 
-def print_results(results, device):
+# def format_results(results, device): ### OLD
+#     """
+#     Print benchmark results in a human-readable format.
+
+#     Args:
+#         results (dict): Results returned by benchmark_training().
+#         device (str): Device used for benchmarking.
+#     """
+#     print("\n" + "=" * 55)
+#     print("PyTorch Training Benchmark")
+#     print("=" * 55)
+
+#     print(f"Device:             {device}")
+#     print(f"Measured batches:   {results['batches']}")
+#     print(f"Images processed:   {results['images']}")
+
+#     print("\nPerformance")
+#     print("-" * 55)
+#     print(f"Images / second:    {results['images_per_second']:.2f}")
+#     print(f"Batch time:         {results['batch_time'] * 1000:.2f} ms")
+#     print(f"Total time:         {results['total_time']:.2f} s")
+
+#     print("\nTiming breakdown")
+#     print("-" * 55)
+#     print(f"Data loading:       {results['data_time'] * 1000:.2f} ms")
+#     print(f"Forward pass:       {results['forward_time'] * 1000:.2f} ms")
+#     print(f"Backward pass:      {results['backward_time'] * 1000:.2f} ms")
+#     print(f"Optimizer:          {results['optimizer_time'] * 1000:.2f} ms")
+
+#     if device == "cuda":
+#         print("\nGPU memory")
+#         print("-" * 55)
+#         print(
+#             f"Peak allocated:     "
+#             f"{results['peak_gpu_memory_mb']:.2f} MB"
+#         )
+
+#     print("=" * 55)
+
+
+def format_results(results, device, batch_size):
     """
     Print benchmark results in a human-readable format.
 
     Args:
         results (dict): Results returned by benchmark_training().
         device (str): Device used for benchmarking.
+        batch_size (int): Size of each batch. Taken from the CLI argument.
     """
-    print("\n" + "=" * 55)
-    print("PyTorch Training Benchmark")
-    print("=" * 55)
+    results = f"""
+    =======================================================
+    PyTorch Training Benchmark
+    =======================================================
+    Date:               {datetime.now().isoformat(timespec="seconds")}
+    Device:             {device}
 
-    print(f"Device:             {device}")
-    print(f"Measured batches:   {results['batches']}")
-    print(f"Images processed:   {results['images']}")
+    PyTorch:            {torch.__version__}
+    CUDA available:     {torch.cuda.is_available()}
+    CUDA version:       {torch.version.cuda}
+    GPU:                {torch.cuda.get_device_name(0) if torch.cuda.is_available() else "N/A"}
+    Python:             {platform.python_version()}
 
-    print("\nPerformance")
-    print("-" * 55)
-    print(f"Images / second:    {results['images_per_second']:.2f}")
-    print(f"Batch time:         {results['batch_time'] * 1000:.2f} ms")
-    print(f"Total time:         {results['total_time']:.2f} s")
+    Configuration
+    -------------------------------------------------------
+    Batch Size:         {batch_size}
+    Measured Batches:   {results['batches']}
+    Images processed:   {results['images']}
 
-    print("\nTiming breakdown")
-    print("-" * 55)
-    print(f"Data loading:       {results['data_time'] * 1000:.2f} ms")
-    print(f"Forward pass:       {results['forward_time'] * 1000:.2f} ms")
-    print(f"Backward pass:      {results['backward_time'] * 1000:.2f} ms")
-    print(f"Optimizer:          {results['optimizer_time'] * 1000:.2f} ms")
+    Performance
+    -------------------------------------------------------
+    Images / second:    {results['images_per_second']:.2f}
+    Batch time:         {results['batch_time'] * 1000:.2f} ms
+    Total time:         {results['total_time']:.2f} s
 
-    if device == "cuda":
-        print("\nGPU memory")
-        print("-" * 55)
-        print(
-            f"Peak allocated:     "
-            f"{results['peak_gpu_memory_mb']:.2f} MB"
-        )
+    Timing breakdown
+    -------------------------------------------------------
+    Data loading:       {results['data_time'] * 1000:.2f} ms
+    Forward pass:       {results['forward_time'] * 1000:.2f} ms
+    Backward pass:      {results['backward_time'] * 1000:.2f} ms
+    Optimizer:          {results['optimizer_time'] * 1000:.2f} ms
 
-    print("=" * 55)
+    GPU memory
+    -------------------------------------------------------
+    Peak allocated:     {results['peak_gpu_memory_mb']:.2f} MB
+    =======================================================
+    """
+    return results
 
 
 def main():
@@ -271,15 +324,30 @@ def main():
     model = get_model()
     model = model.to(device)
 
+    # saving the benchmark results
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    benchmark_dir = Path("logs/benchmarks")
+    benchmark_dir.mkdir(parents=True, exist_ok=True)
+    benchmark_path = benchmark_dir / f"benchmark_{timestamp}.txt"
+
+    warmup_batches = args.warmup_batches
+    benchmark_batches = args.benchmark_batches
+
     results = benchmark_training(
         model,
         train_loader,
         device,
-        warmup_batches=args.warmup_batches,
-        benchmark_batches=args.benchmark_batches,
+        warmup_batches,
+        benchmark_batches
     )
 
-    print_results(results, device)
+    # format_results(results,
+    #             device)
+
+    with open(benchmark_path, "w") as f:
+        f.write(format_results(results, device, args.batch_size))
+
+    print(f"\nBenchmark saved to: {benchmark_path}")
 
 
 if __name__ == "__main__":
