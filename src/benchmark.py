@@ -192,46 +192,6 @@ def benchmark_training(
     return results
 
 
-# def format_results(results, device): ### OLD
-#     """
-#     Print benchmark results in a human-readable format.
-
-#     Args:
-#         results (dict): Results returned by benchmark_training().
-#         device (str): Device used for benchmarking.
-#     """
-#     print("\n" + "=" * 55)
-#     print("PyTorch Training Benchmark")
-#     print("=" * 55)
-
-#     print(f"Device:             {device}")
-#     print(f"Measured batches:   {results['batches']}")
-#     print(f"Images processed:   {results['images']}")
-
-#     print("\nPerformance")
-#     print("-" * 55)
-#     print(f"Images / second:    {results['images_per_second']:.2f}")
-#     print(f"Batch time:         {results['batch_time'] * 1000:.2f} ms")
-#     print(f"Total time:         {results['total_time']:.2f} s")
-
-#     print("\nTiming breakdown")
-#     print("-" * 55)
-#     print(f"Data loading:       {results['data_time'] * 1000:.2f} ms")
-#     print(f"Forward pass:       {results['forward_time'] * 1000:.2f} ms")
-#     print(f"Backward pass:      {results['backward_time'] * 1000:.2f} ms")
-#     print(f"Optimizer:          {results['optimizer_time'] * 1000:.2f} ms")
-
-#     if device == "cuda":
-#         print("\nGPU memory")
-#         print("-" * 55)
-#         print(
-#             f"Peak allocated:     "
-#             f"{results['peak_gpu_memory_mb']:.2f} MB"
-#         )
-
-#     print("=" * 55)
-
-
 def format_results(results, device, batch_size):
     """
     Print benchmark results in a human-readable format.
@@ -279,6 +239,7 @@ def format_results(results, device, batch_size):
     =======================================================
     """
     return results
+
 
 
 def main():
@@ -340,9 +301,6 @@ def main():
         warmup_batches,
         benchmark_batches
     )
-
-    # format_results(results,
-    #             device)
 
     with open(benchmark_path, "w") as f:
         f.write(format_results(results, device, args.batch_size))
