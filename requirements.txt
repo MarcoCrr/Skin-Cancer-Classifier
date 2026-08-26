@@ -9,3 +9,4 @@ tqdm
 pytest
 pytest-cov
 psutil
+nvidia-ml-py
