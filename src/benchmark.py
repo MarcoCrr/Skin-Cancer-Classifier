@@ -9,6 +9,7 @@ from src.model import get_model
 
 from datetime import datetime
 from pathlib import Path
+import csv
 
 # monitoring
 import threading
@@ -209,7 +210,7 @@ def benchmark_training(
     return results
 
 
-def format_results(results, device, batch_size):
+def format_results(results, device, batch_size, num_workers):
     """
     Print benchmark results in a human-readable format.
 
@@ -217,6 +218,7 @@ def format_results(results, device, batch_size):
         results (dict): Results returned by benchmark_training().
         device (str): Device used for benchmarking.
         batch_size (int): Size of each batch. Taken from the CLI argument.
+        num_workers (int): Number of DataLoader worker processes.
     """
     results = f"""
     =======================================================
@@ -234,6 +236,7 @@ def format_results(results, device, batch_size):
     Configuration
     -------------------------------------------------------
     Batch Size:         {batch_size}
+    DataLoader Workers: {num_workers}
     Measured Batches:   {results['batches']}
     Images processed:   {results['images']}
 
@@ -357,6 +360,74 @@ class SystemMonitor:
     """
 
 
+def save_benchmark_csv(results, system_stats, batch_size, num_workers,
+                       device, csv_path):
+    """
+    Append benchmark results to a CSV file.
+
+    Each benchmark execution is stored as one row, allowing results
+    from different batch sizes and DataLoader worker counts to be
+    compared and plotted later.
+
+    Args:
+        results (dict): Training benchmark results.
+        system_stats (dict): CPU/GPU monitoring results.
+        batch_size (int): Batch size used for the benchmark.
+        num_workers (int): Number of DataLoader workers.
+        device (str): Device used for benchmarking.
+        csv_path (str): Destination CSV file.
+    """
+    csv_path = Path(csv_path)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = [
+        "timestamp",
+        "device",
+        "batch_size",
+        "num_workers",
+        "batches",
+        "images",
+        "images_per_second",
+        "batch_time",
+        "data_time",
+        "transfer_time",
+        "forward_time",
+        "backward_time",
+        "optimizer_time",
+        "total_time",
+        "peak_gpu_memory_mb",
+        "cpu_avg",
+        "cpu_max",
+        "gpu_avg",
+        "gpu_max",
+        "gpu_memory_avg",
+        "gpu_memory_max",
+    ]
+
+    row = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "device": device,
+        "batch_size": batch_size,
+        "num_workers": num_workers,
+        **results,
+        **system_stats,
+    }
+
+    file_exists = csv_path.exists()
+
+    with open(csv_path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            field: row.get(field, "")
+            for field in fieldnames
+        })
+
+
+
 def main():
     """
     Run the training benchmark from the command line.
@@ -432,14 +503,24 @@ def main():
     system_stats = monitor.summary()
     system_stats_text = monitor.format_summary(system_stats)
 
-    print(format_results(results, device, args.batch_size))
+    print(format_results(results, device, args.batch_size, args.num_workers))
     print(system_stats_text)
 
     with open(benchmark_path, "w") as f:
-        f.write(format_results(results, device, args.batch_size))
+        f.write(format_results(results, device, args.batch_size, args.num_workers))
         f.write(system_stats_text)
 
     print(f"\nBenchmark saved to: {benchmark_path}")
+
+    save_benchmark_csv(
+    results,
+    system_stats,
+    batch_size=args.batch_size,
+    num_workers=args.num_workers,
+    device=device,
+    csv_path="logs/benchmarks/benchmark_results.csv"
+    )
+    print("Benchmark results appended to: logs/benchmarks/benchmark_results.csv")
 
 
 if __name__ == "__main__":
