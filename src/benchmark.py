@@ -93,6 +93,7 @@ def benchmark_training(
     # ---------------------------------------------------------
 
     data_time = 0.0
+    transfer_time = 0.0
     forward_time = 0.0
     backward_time = 0.0
     optimizer_time = 0.0
