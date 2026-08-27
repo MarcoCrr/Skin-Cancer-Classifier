@@ -4,8 +4,6 @@ import time
 import torch
 import platform
 
-from torch import monitor
-
 from src.data import get_dataloaders
 from src.model import get_model
 
@@ -243,7 +241,7 @@ def format_results(results, device, batch_size):
 
     GPU memory
     -------------------------------------------------------
-    Peak allocated:     {results['peak_gpu_memory_mb']:.2f} MB
+    PyTorch peak allocated:     {results['peak_gpu_memory_mb']:.2f} MB
     =======================================================
     """
     return results
@@ -307,6 +305,8 @@ class SystemMonitor:
     cpu_max:          {max(self.cpu_usage):.2f} %
     gpu_avg:          {sum(self.gpu_usage) / len(self.gpu_usage):.2f} %
     gpu_max:          {max(self.gpu_usage):.2f} %
+
+    GPU total memory used
     gpu_memory_avg:   {sum(self.gpu_memory) / len(self.gpu_memory):.2f} MB
     gpu_memory_max:   {max(self.gpu_memory):.2f} MB
         """
