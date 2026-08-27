@@ -4,11 +4,18 @@ import time
 import torch
 import platform
 
+from torch import monitor
+
 from src.data import get_dataloaders
 from src.model import get_model
 
 from datetime import datetime
 from pathlib import Path
+
+# monitoring
+import threading
+import psutil
+import pynvml
 
 
 def synchronize(device):
@@ -112,7 +119,8 @@ def benchmark_training(
             data_iterator = iter(dataloader)
             images, labels = next(data_iterator)
 
-        synchronize(device)
+        # Not needed here since data loading is on CPU and doesn't involve CUDA operations.
+        # synchronize(device)
         data_time += time.perf_counter() - start
 
         batch_size = images.size(0)
@@ -186,7 +194,7 @@ def benchmark_training(
 
     if device == "cuda":
         results["peak_gpu_memory_mb"] = (
-            torch.cuda.max_memory_allocated() / (1024 ** 2)
+            torch.cuda.max_memory_allocated() / (1024 ** 2) # memory allocated specifically by PyTorch
         )
 
     return results
@@ -241,6 +249,69 @@ def format_results(results, device, batch_size):
     return results
 
 
+class SystemMonitor:
+    """Periodically collect CPU and NVIDIA GPU utilization statistics."""
+
+    def __init__(self, interval=0.1):
+        self.interval = interval
+        self.running = False
+
+        self.cpu_usage = []
+        self.gpu_usage = []
+        self.gpu_memory = []
+
+    def start(self):
+        """Start collecting system statistics."""
+        self.running = True
+
+        self.thread = threading.Thread(
+            target=self._monitor,
+            daemon=True
+        )
+
+        self.thread.start()
+
+    def stop(self):
+        """Stop collecting statistics and wait for the monitor thread."""
+        self.running = False
+        self.thread.join()
+
+    def _monitor(self):
+        """Collect CPU and GPU statistics periodically."""
+        pynvml.nvmlInit()
+
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+
+        while self.running:
+            # CPU utilization
+            cpu = psutil.cpu_percent(interval=None)
+            self.cpu_usage.append(cpu)
+
+            # GPU utilization
+            gpu = pynvml.nvmlDeviceGetUtilizationRates(handle)
+            self.gpu_usage.append(gpu.gpu)
+
+            # GPU memory
+            memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            self.gpu_memory.append(memory.used / 1024**2) # memory used by whole GPU
+
+            time.sleep(self.interval)
+
+        pynvml.nvmlShutdown()
+
+    def summary(self):
+        """Return average and peak system utilization statistics."""
+
+        results = f"""
+    cpu_avg:          {sum(self.cpu_usage) / len(self.cpu_usage):.2f} %
+    cpu_max:          {max(self.cpu_usage):.2f} %
+    gpu_avg:          {sum(self.gpu_usage) / len(self.gpu_usage):.2f} %
+    gpu_max:          {max(self.gpu_usage):.2f} %
+    gpu_memory_avg:   {sum(self.gpu_memory) / len(self.gpu_memory):.2f} MB
+    gpu_memory_max:   {max(self.gpu_memory):.2f} MB
+        """
+        return results
+
 
 def main():
     """
@@ -294,6 +365,10 @@ def main():
     warmup_batches = args.warmup_batches
     benchmark_batches = args.benchmark_batches
 
+    # Start CPU and GPU monitoring 
+    monitor = SystemMonitor()
+    monitor.start()
+
     results = benchmark_training(
         model,
         train_loader,
@@ -302,8 +377,15 @@ def main():
         benchmark_batches
     )
 
+    monitor.stop()
+    system_stats = monitor.summary()
+
+    print(format_results(results, device, args.batch_size))
+    print(system_stats)
+
     with open(benchmark_path, "w") as f:
         f.write(format_results(results, device, args.batch_size))
+        f.write(system_stats)
 
     print(f"\nBenchmark saved to: {benchmark_path}")
 
