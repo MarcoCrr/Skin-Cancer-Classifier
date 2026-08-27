@@ -385,6 +385,13 @@ def main():
         help="Number of measured batches."
     )
 
+    parser.add_argument(
+    "--num-workers",
+    type=int,
+    default=0,
+    help="Number of DataLoader worker processes."
+    )
+
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -393,7 +400,7 @@ def main():
         "data/train",
         "data/val",
         batch_size=args.batch_size,
-        num_workers=0,
+        num_workers=args.num_workers,
     )
 
     model = get_model()
