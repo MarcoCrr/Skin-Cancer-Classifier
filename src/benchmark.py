@@ -380,6 +380,8 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
     csv_path = Path(csv_path)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # WARNING: if you change the field names,
+    # make sure to apply the appropriate changes in load_benchmarks()
     fieldnames = [
         "timestamp",
         "device",
