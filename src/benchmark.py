@@ -125,8 +125,17 @@ def benchmark_training(
         images_processed += batch_size
         batches_processed += 1
 
+        # -----------------------------
+        # CPU -> GPU transfer
+        # -----------------------------
+        synchronize(device)
+        start = time.perf_counter()
+
         images = images.to(device)
         labels = labels.to(device)
+
+        synchronize(device)
+        transfer_time += time.perf_counter() - start
 
         # -----------------------------
         # Forward pass
@@ -182,6 +191,7 @@ def benchmark_training(
         "images_per_second": images_per_second,
         "batch_time": batch_time,
         "data_time": data_time / batches_processed,
+        "transfer_time": transfer_time / batches_processed,
         "forward_time": forward_time / batches_processed,
         "backward_time": backward_time / batches_processed,
         "optimizer_time": optimizer_time / batches_processed,
@@ -235,6 +245,7 @@ def format_results(results, device, batch_size):
     Timing breakdown
     -------------------------------------------------------
     Data loading:       {results['data_time'] * 1000:.2f} ms
+    CPU->GPU time:      {results['transfer_time'] * 1000:.2f} ms
     Forward pass:       {results['forward_time'] * 1000:.2f} ms
     Backward pass:      {results['backward_time'] * 1000:.2f} ms
     Optimizer:          {results['optimizer_time'] * 1000:.2f} ms
