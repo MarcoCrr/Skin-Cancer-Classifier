@@ -241,7 +241,7 @@ def format_results(results, device, batch_size):
 
     GPU memory
     -------------------------------------------------------
-    PyTorch peak allocated:     {results['peak_gpu_memory_mb']:.2f} MB
+    PyTorch peak allocated:   {results['peak_gpu_memory_mb']:.2f} MB
     =======================================================
     """
     return results
@@ -297,20 +297,52 @@ class SystemMonitor:
 
         pynvml.nvmlShutdown()
 
-    def summary(self):
+    def summary(self): # create function that converts it into a string
         """Return average and peak system utilization statistics."""
 
-        results = f"""
-    cpu_avg:          {sum(self.cpu_usage) / len(self.cpu_usage):.2f} %
-    cpu_max:          {max(self.cpu_usage):.2f} %
-    gpu_avg:          {sum(self.gpu_usage) / len(self.gpu_usage):.2f} %
-    gpu_max:          {max(self.gpu_usage):.2f} %
+        if not self.cpu_usage: # protects against ZeroDivisionError if no data was collected
+            return {
+                "cpu_avg": 0.0,
+                "cpu_max": 0.0,
+                "gpu_avg": 0.0,
+                "gpu_max": 0.0,
+                "gpu_memory_avg": 0.0,
+                "gpu_memory_max": 0.0,
+            }
+    
+        return {
+        "cpu_avg": sum(self.cpu_usage) / len(self.cpu_usage),
+        "cpu_max": max(self.cpu_usage),
+        "gpu_avg": sum(self.gpu_usage) / len(self.gpu_usage),
+        "gpu_max": max(self.gpu_usage),
+        "gpu_memory_avg": sum(self.gpu_memory) / len(self.gpu_memory),
+        "gpu_memory_max": max(self.gpu_memory),
+    }
+
+    def format_summary(self, stats):
+        """
+        Format system monitoring statistics for human-readable output.
+        Args:
+            stats (dict): Statistics returned by summary().
+        Returns:
+            str: Formatted statistics suitable for console output or logging.
+        """
+        return f"""
+    System Monitoring
+    -------------------------------------------------------
+    CPU utilization
+        Average:          {stats['cpu_avg']:.2f} %
+        Maximum:          {stats['cpu_max']:.2f} %
+
+    GPU utilization
+        Average:          {stats['gpu_avg']:.2f} %
+        Maximum:          {stats['gpu_max']:.2f} %
 
     GPU total memory used
-    gpu_memory_avg:   {sum(self.gpu_memory) / len(self.gpu_memory):.2f} MB
-    gpu_memory_max:   {max(self.gpu_memory):.2f} MB
-        """
-        return results
+        Average:          {stats['gpu_memory_avg']:.2f} MB
+        Maximum:          {stats['gpu_memory_max']:.2f} MB
+    -------------------------------------------------------
+    """
 
 
 def main():
@@ -379,13 +411,14 @@ def main():
 
     monitor.stop()
     system_stats = monitor.summary()
+    system_stats_text = monitor.format_summary(system_stats)
 
     print(format_results(results, device, args.batch_size))
-    print(system_stats)
+    print(system_stats_text)
 
     with open(benchmark_path, "w") as f:
         f.write(format_results(results, device, args.batch_size))
-        f.write(system_stats)
+        f.write(system_stats_text)
 
     print(f"\nBenchmark saved to: {benchmark_path}")
 
