@@ -1,6 +1,6 @@
 # Skin Cancer Classification with PyTorch
 
-[![codecov](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier/graph/badge.svg?token=5INB1F11SK)](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier)
+<!-- [![codecov](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier/graph/badge.svg?token=5INB1F11SK)](https://codecov.io/github/MarcoCrr/Skin-Cancer-Classifier) -->
 [![Tests](https://github.com/MarcoCrr/Skin-Cancer-Classifier/actions/workflows/python-tests.yml/badge.svg)](https://github.com/MarcoCrr/Skin-Cancer-Classifier/actions)
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-DeepLearning-red)
