@@ -7,7 +7,8 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 An end-to-end deep learning project for binary skin cancer classification using the HAM10000 dataset and PyTorch.
-The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations.
+The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. <br>
+**UPDATE**: I am working on performance optimization right now, the files are being pushed but I will update the Readme with some results soon.
 
 ## Features
 ### End-to-end ML pipeline:
