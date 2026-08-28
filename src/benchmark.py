@@ -466,7 +466,20 @@ def main():
     help="Number of DataLoader worker processes."
     )
 
+    parser.add_argument(
+    "--session-id",
+    type=str,
+    default=None,
+    help=("Identifier grouping related benchmark runs. "
+        "If omitted, a unique session ID is generated.")
+    )
+
+
     args = parser.parse_args()
+
+    session_id = args.session_id
+    if session_id is None:
+        session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
