@@ -210,7 +210,7 @@ def benchmark_training(
     return results
 
 
-def format_results(results, device, batch_size, num_workers):
+def format_results(results, device, batch_size, num_workers, session_id):
     """
     Print benchmark results in a human-readable format.
 
@@ -219,12 +219,14 @@ def format_results(results, device, batch_size, num_workers):
         device (str): Device used for benchmarking.
         batch_size (int): Size of each batch. Taken from the CLI argument.
         num_workers (int): Number of DataLoader worker processes.
+        session_id (str): Identifier for grouping related benchmark runs.
     """
     results = f"""
     =======================================================
     PyTorch Training Benchmark
     =======================================================
     Date:               {datetime.now().isoformat(timespec="seconds")}
+    Session ID:         {session_id}
     Device:             {device}
 
     PyTorch:            {torch.__version__}
@@ -361,7 +363,7 @@ class SystemMonitor:
 
 
 def save_benchmark_csv(results, system_stats, batch_size, num_workers,
-                       device, csv_path):
+                       session_id, device, csv_path):
     """
     Append benchmark results to a CSV file.
 
@@ -408,6 +410,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
 
     row = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "session_id": session_id,
         "device": device,
         "batch_size": batch_size,
         "num_workers": num_workers,
@@ -518,11 +521,11 @@ def main():
     system_stats = monitor.summary()
     system_stats_text = monitor.format_summary(system_stats)
 
-    print(format_results(results, device, args.batch_size, args.num_workers))
+    print(format_results(results, device, args.batch_size, args.num_workers, session_id))
     print(system_stats_text)
 
     with open(benchmark_path, "w") as f:
-        f.write(format_results(results, device, args.batch_size, args.num_workers))
+        f.write(format_results(results, device, args.batch_size, args.num_workers, session_id))
         f.write(system_stats_text)
 
     print(f"\nBenchmark saved to: {benchmark_path}")
