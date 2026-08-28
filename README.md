@@ -6,9 +6,8 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-DeepLearning-red)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-An end-to-end deep learning project for binary skin cancer classification using the HAM10000 dataset and PyTorch.
-The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. <br>
-**UPDATE**: I am working on performance optimization right now, the files are being pushed but I will update the Readme with some results soon.
+An ent-to-end, PyTorch-based image classification pipeline for distinguishing **benign** and **malignant** skin lesions using transfer learning with **ResNet18** and the HAM10000 dataset.
+The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. A performance analysis has been done also for this reason. <br>
 
 ## Features
 ### End-to-end ML pipeline:
@@ -23,6 +22,7 @@ The project emphasizes a clean architecture and contains model evaluation, visua
 * Confusion Matrix
 * ROC Curve
 * Precision–Recall Curve
+* Training-performance benchmarking and GPU utilization analysis
 
 ### Visualization tools:
 * Predictions (with mistakes filtering)
@@ -126,6 +126,43 @@ python -m src.evaluate
 **Outputs:** precision / recall, confusion matrix, classification report
 
 **Saved in:** _logs/eval.txt_
+
+
+### Training Performance Benchmark
+An additional part of the project investigates GPU training performance and data-loading efficiency. <br>
+Running the benchmark:
+```
+python -m src.benchmark.py
+```
+It measures:
+
+* images/second
+* batch time
+* total benchmark time
+* data-loading time
+* CPU to GPU transfer time
+* forward-pass time
+* backward-pass time
+* optimizer time
+* PyTorch GPU memory allocation
+* CPU utilization
+* GPU utilization
+* total GPU memory usage
+```
+Performance
+-------------------------------------------------------
+Images / second:    849.22
+Batch time:         37.68 ms
+Total time:         1.88 s
+
+Timing breakdown
+-------------------------------------------------------
+Data loading:       1.18 ms
+CPU to GPU time:      9.96 ms
+Forward pass:       24.91 ms
+Backward pass:      0.70 ms
+Optimizer:          0.56 ms
+```
 
 ### Visualization
 ```
