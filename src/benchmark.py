@@ -376,6 +376,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
         system_stats (dict): CPU/GPU monitoring results.
         batch_size (int): Batch size used for the benchmark.
         num_workers (int): Number of DataLoader workers.
+        session_id (str): Identifier for grouping related benchmark runs.
         device (str): Device used for benchmarking.
         csv_path (str): Destination CSV file.
     """
@@ -386,6 +387,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
     # make sure to apply the appropriate changes in load_benchmarks()
     fieldnames = [
         "timestamp",
+        "session_id",
         "device",
         "batch_size",
         "num_workers",
@@ -535,6 +537,7 @@ def main():
     system_stats,
     batch_size=args.batch_size,
     num_workers=args.num_workers,
+    session_id=session_id,
     device=device,
     csv_path="logs/benchmarks/benchmark_results.csv"
     )
