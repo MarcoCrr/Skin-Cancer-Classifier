@@ -467,7 +467,7 @@ def main():
     parser.add_argument(
     "--num-workers",
     type=int,
-    default=0,
+    default=5,
     help="Number of DataLoader worker processes."
     )
 
