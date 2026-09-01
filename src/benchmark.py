@@ -72,8 +72,8 @@ def benchmark_training(
             data_iterator = iter(dataloader)
             images, labels = next(data_iterator)
 
-        images = images.to(device)
-        labels = labels.to(device)
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
 
         optimizer.zero_grad()
 
@@ -133,8 +133,8 @@ def benchmark_training(
         synchronize(device)
         start = time.perf_counter()
 
-        images = images.to(device)
-        labels = labels.to(device)
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
 
         synchronize(device)
         transfer_time += time.perf_counter() - start
