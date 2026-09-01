@@ -19,7 +19,11 @@ def get_dataloaders(train_dir,
     train_dataset = datasets.ImageFolder(train_dir, transform=transform)
     val_dataset = datasets.ImageFolder(val_dir, transform=transform)
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              shuffle=True, num_workers=num_workers,
+                              pin_memory=True, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+                            num_workers=num_workers,
+                            pin_memory=True, persistent_workers=True)
     
     return train_loader, val_loader
