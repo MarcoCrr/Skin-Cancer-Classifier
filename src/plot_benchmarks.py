@@ -135,7 +135,7 @@ def plot_gpu_memory(df, save_path):
     plt.ylabel("Peak PyTorch Memory (MB)")
     plt.title("GPU Memory Usage")
     plt.legend()
-    plt.grid(True)
+    #plt.grid(True)
 
     plt.tight_layout()
     plt.savefig(save_path)
