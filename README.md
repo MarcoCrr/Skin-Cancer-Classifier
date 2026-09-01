@@ -148,21 +148,67 @@ It measures:
 * CPU utilization
 * GPU utilization
 * total GPU memory usage
+Output example:
 ```
-Performance
--------------------------------------------------------
-Images / second:    849.22
-Batch time:         37.68 ms
-Total time:         1.88 s
+    =======================================================
+    PyTorch Training Benchmark
+    =======================================================
+    Date:               2026-09-01T11:10:38
+    Session ID:         test
+    Device:             cuda
 
-Timing breakdown
--------------------------------------------------------
-Data loading:       1.18 ms
-CPU to GPU time:      9.96 ms
-Forward pass:       24.91 ms
-Backward pass:      0.70 ms
-Optimizer:          0.56 ms
+    PyTorch:            2.5.1+cu121
+    CUDA available:     True
+    CUDA version:       12.1
+    GPU:                NVIDIA GeForce RTX 2060
+    Python:             3.10.20
+
+    Configuration
+    -------------------------------------------------------
+    Batch Size:         32
+    DataLoader Workers: 5
+    Measured Batches:   50
+    Images processed:   1600
+
+    Performance
+    -------------------------------------------------------
+    Images / second:    797.63
+    Batch time:         40.12 ms
+    Total time:         2.01 s
+
+    Timing breakdown
+    -------------------------------------------------------
+    Data loading:       1.38 ms
+    CPU->GPU time:      10.02 ms
+    Forward pass:       27.10 ms
+    Backward pass:      0.67 ms
+    Optimizer:          0.59 ms
+
+    GPU memory
+    -------------------------------------------------------
+    PyTorch peak allocated:   286.14 MB
+    =======================================================
+    
+    System Monitoring
+    -------------------------------------------------------
+    CPU utilization
+        Average:          39.31 %
+        Maximum:          68.80 %
+
+    GPU utilization
+        Average:          51.56 %
+        Maximum:          75.00 %
+
+    GPU total memory used
+        Average:          1123.58 MB
+        Maximum:          1173.19 MB
+    -------------------------------------------------------
 ```
+From internal tests varying the number of batches and workers, (with my current setup) I mainly observed that:
+* for num_workers=0 the data loading is a huge bottleneck, dominating over the GPU usage
+* a sweetspot of num_workers=5 has been found, since the throughput jumps from ~150–180 images/s (num_workers=0) to ~800+ images/s (num_workers>5). The data loading time decreases by a factor of 100.
+* varying the batch size does not impact the throughput as drastically as the number of workers. batch_size=32 is a good tradeoff, which also keeps the GPU memory usage and utilization at mormal values.
+After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters.
 
 ### Visualization
 ```
