@@ -208,7 +208,8 @@ From internal tests varying the number of batches and workers, (with my current 
 * for num_workers=0 the data loading is a huge bottleneck, dominating over the GPU usage
 * a sweetspot of num_workers=5 has been found, since the throughput jumps from ~150–180 images/s (num_workers=0) to ~800+ images/s (num_workers>5). The data loading time decreases by a factor of 100.
 * varying the batch size does not impact the throughput as drastically as the number of workers. batch_size=32 is a good tradeoff, which also keeps the GPU memory usage and utilization at mormal values.
-After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters.
+After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters. <br>
+I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
 
 ### Visualization
 ```
