@@ -37,6 +37,7 @@ def benchmark_training(
     device,
     warmup_batches=10,
     benchmark_batches=50,
+    use_amp=False
 ):
     """
     Benchmark the main stages of a PyTorch training loop.
@@ -50,12 +51,14 @@ def benchmark_training(
         device (str): Device used for computation.
         warmup_batches (int): Number of batches excluded from measurements.
         benchmark_batches (int): Number of batches included in measurements.
+        use_amp (bool): Whether to use automatic mixed precision (AMP).
 
     Returns:
         dict: Benchmark metrics.
     """
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.fc.parameters(), lr=0.001)
+    scaler = torch.amp.GradScaler("cuda",enabled=use_amp)
 
     model.train()
 
@@ -77,11 +80,17 @@ def benchmark_training(
 
         optimizer.zero_grad()
 
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        with torch.autocast(
+            device_type="cuda",
+            dtype=torch.float16,
+            enabled=use_amp
+):
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
     synchronize(device)
 
@@ -148,8 +157,13 @@ def benchmark_training(
         synchronize(device)
         start = time.perf_counter()
 
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        with torch.autocast(
+            device_type="cuda",
+            dtype=torch.float16,
+            enabled=use_amp
+        ):
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
         synchronize(device)
         forward_time += time.perf_counter() - start
@@ -161,7 +175,7 @@ def benchmark_training(
         synchronize(device)
         start = time.perf_counter()
 
-        loss.backward()
+        scaler.scale(loss).backward()
 
         synchronize(device)
         backward_time += time.perf_counter() - start
@@ -173,7 +187,8 @@ def benchmark_training(
         synchronize(device)
         start = time.perf_counter()
 
-        optimizer.step()
+        scaler.step(optimizer)
+        scaler.update()
 
         synchronize(device)
         optimizer_time += time.perf_counter() - start
@@ -210,7 +225,7 @@ def benchmark_training(
     return results
 
 
-def format_results(results, device, batch_size, num_workers, session_id):
+def format_results(results, device, batch_size, num_workers, session_id, use_amp=False):
     """
     Print benchmark results in a human-readable format.
 
@@ -220,6 +235,7 @@ def format_results(results, device, batch_size, num_workers, session_id):
         batch_size (int): Size of each batch. Taken from the CLI argument.
         num_workers (int): Number of DataLoader worker processes.
         session_id (str): Identifier for grouping related benchmark runs.
+        use_amp (bool): Whether automatic mixed precision was used.
     """
     results = f"""
     =======================================================
@@ -239,6 +255,7 @@ def format_results(results, device, batch_size, num_workers, session_id):
     -------------------------------------------------------
     Batch Size:         {batch_size}
     DataLoader Workers: {num_workers}
+    AMP:                {use_amp}
     Measured Batches:   {results['batches']}
     Images processed:   {results['images']}
 
@@ -363,7 +380,7 @@ class SystemMonitor:
 
 
 def save_benchmark_csv(results, system_stats, batch_size, num_workers,
-                       session_id, device, csv_path):
+                       session_id, use_amp, device, csv_path):
     """
     Append benchmark results to a CSV file.
 
@@ -377,6 +394,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
         batch_size (int): Batch size used for the benchmark.
         num_workers (int): Number of DataLoader workers.
         session_id (str): Identifier for grouping related benchmark runs.
+        use_amp (bool): Whether automatic mixed precision is enabled.
         device (str): Device used for benchmarking.
         csv_path (str): Destination CSV file.
     """
@@ -391,6 +409,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
         "device",
         "batch_size",
         "num_workers",
+        "amp",
         "batches",
         "images",
         "images_per_second",
@@ -416,6 +435,7 @@ def save_benchmark_csv(results, system_stats, batch_size, num_workers,
         "device": device,
         "batch_size": batch_size,
         "num_workers": num_workers,
+        "amp": use_amp,
         **results,
         **system_stats,
     }
@@ -472,6 +492,12 @@ def main():
     )
 
     parser.add_argument(
+    "--amp",
+    action="store_true",
+    help="Enable automatic mixed precision."
+    )
+
+    parser.add_argument(
     "--session-id",
     type=str,
     default=None,
@@ -487,6 +513,8 @@ def main():
         session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    if args.amp and device != "cuda":
+        raise RuntimeError("AMP benchmarking requires a CUDA device.")
 
     train_loader, _ = get_dataloaders(
         "data/train",
@@ -516,18 +544,19 @@ def main():
         train_loader,
         device,
         warmup_batches,
-        benchmark_batches
+        benchmark_batches,
+        use_amp=args.amp
     )
 
     monitor.stop()
     system_stats = monitor.summary()
     system_stats_text = monitor.format_summary(system_stats)
 
-    print(format_results(results, device, args.batch_size, args.num_workers, session_id))
+    print(format_results(results, device, args.batch_size, args.num_workers, session_id, args.amp))
     print(system_stats_text)
 
     with open(benchmark_path, "w") as f:
-        f.write(format_results(results, device, args.batch_size, args.num_workers, session_id))
+        f.write(format_results(results, device, args.batch_size, args.num_workers, session_id, args.amp))
         f.write(system_stats_text)
 
     print(f"\nBenchmark saved to: {benchmark_path}")
@@ -538,6 +567,7 @@ def main():
     batch_size=args.batch_size,
     num_workers=args.num_workers,
     session_id=session_id,
+    use_amp=args.amp,
     device=device,
     csv_path="logs/benchmarks/benchmark_results.csv"
     )
