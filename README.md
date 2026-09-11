@@ -182,7 +182,8 @@ Output example:
     CPU->GPU time:      10.02 ms
     Forward pass:       27.10 ms
     Backward pass:      0.67 ms
-    Optimizer:          0.59 ms (both tiny because I decided to freeze the backbone)
+    Optimizer:          0.59 ms
+    (Backw and opt tiny because I decided to freeze the backbone)
 
     GPU memory
     -------------------------------------------------------
@@ -204,6 +205,7 @@ Output example:
         Maximum:          1173.19 MB
     -------------------------------------------------------
 ```
+#### Comments
 From internal tests varying the number of batches and workers, (with my current setup) I mainly observed that:
 * for num_workers=0 the data loading is a huge bottleneck, dominating over the GPU usage
 * a sweetspot of num_workers=5 has been found, since the throughput jumps from ~150–180 images/s (num_workers=0) to ~800+ images/s (num_workers>5). The data loading time decreases by a factor of 100.
@@ -211,6 +213,13 @@ From internal tests varying the number of batches and workers, (with my current 
 After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters. <br>
 
 I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
+
+I tested the Automatic Mixed Precision (AMP) during the training, making the following conclusions:
+* AMP accelerates GPU forward computation (~+40%) and reduces PyTorch memory consumption (~-30%). Backward and optimizer time are increased in a proportional way
+* data_time with AMP increased by ~+127%: the training loop has to wait the next batch for more time
+* summing up, no net effect on the throughput and computation time
+* GPU average and max utilization are also positively impacted by AMP (~-30% and ~-42% respectively)
+* concluding: with AMP, the pipeline seeks an accelerated GPU computation, but an higher waiting time for DataLoader.
 
 ### Visualization
 ```
