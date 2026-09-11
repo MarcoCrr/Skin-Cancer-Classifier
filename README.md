@@ -182,7 +182,7 @@ Output example:
     CPU->GPU time:      10.02 ms
     Forward pass:       27.10 ms
     Backward pass:      0.67 ms
-    Optimizer:          0.59 ms
+    Optimizer:          0.59 ms (both tiny because I decided to freeze the backbone)
 
     GPU memory
     -------------------------------------------------------
