@@ -215,7 +215,7 @@ After these tests, I concluded that num_workers=5 and batch_size=32 are my optim
 I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
 
 I tested the Automatic Mixed Precision (AMP) during the training, making the following conclusions:
-* AMP accelerates GPU forward computation (~+40%) and reduces PyTorch memory consumption (~-30%). Backward and optimizer time are increased in a proportional way
+* AMP accelerates GPU forward computation (~ +40%) and reduces PyTorch memory consumption (~-30%). Backward and optimizer time are increased in a proportional way
 * data_time with AMP increased by ~+127%: the training loop has to wait the next batch for more time
 * summing up, no net effect on the throughput and computation time
 * GPU average and max utilization are also positively impacted by AMP (~-30% and ~-42% respectively)
