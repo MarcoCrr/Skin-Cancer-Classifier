@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 An ent-to-end, PyTorch-based image classification pipeline for distinguishing **benign** and **malignant** skin lesions using transfer learning with **ResNet18** and the HAM10000 dataset.
-The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. GPU training performance and data-loading efficiency were also inspected and optimized for this reason. <br>
+The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. GPU training performance and data-loading efficiency were also inspected and optimized for this reason, as discussed in the [Training Performance Benchmark](#training-performance-benchmark) section. <br>
 
 ## Features
 ### End-to-end ML pipeline:
@@ -163,6 +163,9 @@ Transfer learning (ImageNet pretrained) <br>
 Final layer adapted for binary classification <br>
 
 
+--------------------------------------
+
+
 ### Training Performance Benchmark
 An additional part of the project investigates GPU training performance and data-loading efficiency. <br>
 Running the benchmark:
@@ -183,6 +186,7 @@ It measures:
 * CPU utilization
 * GPU utilization
 * total GPU memory usage
+
 Output example:
 ```
     =======================================================
@@ -249,9 +253,14 @@ After these tests, I concluded that num_workers=5 and batch_size=32 are my optim
 
 I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
 
+(**merge the next two bullet lists for more clarity!**) <br>
 I tested the Automatic Mixed Precision (AMP) during the training, making the following conclusions:
 * AMP accelerates GPU forward computation (~ +40%) and reduces PyTorch memory consumption (~-30%). Backward and optimizer time are increased in a proportional way
-* data_time with AMP increased by ~+127%: the training loop has to wait the next batch for more time
+* data_time with AMP increased by ~+127%: the training loop has to wait the next batch for more time (AND not AMP making the data transfer slower, I elaborate more below)
 * summing up, no net effect on the throughput and computation time
 * GPU average and max utilization are also positively impacted by AMP (~-30% and ~-42% respectively)
 * concluding: with AMP, the pipeline seeks an accelerated GPU computation, but an higher waiting time for DataLoader.
+
+I further investigated this behavior by using the Pytorch Profiler.
+* the ~+41% forward-time improvement with AMP is given by a proportional decrease of convolution, ReLU and BatchNorm operation time.
+* regarding the sharp increase in *data_time*, the profiling shows that the host-to-device transfer is basically identical, meaning that AMP does not meake the data transfer slower. I interpret it as the DataLoader spending more time waiting for the next batch, since the GPU is now faster at processing them. This is supported by a lower GPU utilization with AMP.
