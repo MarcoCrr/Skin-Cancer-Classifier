@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 An ent-to-end, PyTorch-based image classification pipeline for distinguishing **benign** and **malignant** skin lesions using transfer learning with **ResNet18** and the HAM10000 dataset.
-The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. A performance analysis has been done also for this reason. <br>
+The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. GPU training performance and data-loading efficiency were also inspected and optimized for this reason. <br>
 
 ## Features
 ### End-to-end ML pipeline:
@@ -43,7 +43,7 @@ The project emphasizes a clean architecture and contains model evaluation, visua
 
 
 ## Examples: Results & Visualizations
-**Notice**: this is a modest-sized project, whose goal is not to compete with more elaborate methods but rather to show how to set up a solid ML project, with good programming practices, et cetera. Its performance can be greatly improved with some tweaks and improvements (the number of false negatives is a perfect example of this).
+**Notice**: this is a modest-sized project, whose goal is not to compete with more elaborate methods but rather to show how to set up a solid ML project, with good programming practices, et cetera. Its performance can be greatly improved with some tweaks and improvements.
 
 ### Confusion Matrix
 ![Confusion Matrix](logs/confusion_matrix.png)
@@ -209,7 +209,7 @@ Output example:
 From internal tests varying the number of batches and workers, (with my current setup) I mainly observed that:
 * for num_workers=0 the data loading is a huge bottleneck, dominating over the GPU usage
 * a sweetspot of num_workers=5 has been found, since the throughput jumps from ~150–180 images/s (num_workers=0) to ~800+ images/s (num_workers>5). The data loading time decreases by a factor of 100.
-* varying the batch size does not impact the throughput as drastically as the number of workers. batch_size=32 is a good tradeoff, which also keeps the GPU memory usage and utilization at mormal values.
+* varying the batch size does not impact the throughput as drastically as the number of workers. batch_size=32 is a good tradeoff, which also keeps the GPU memory usage and utilization at normal values.
 After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters. <br>
 
 I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
