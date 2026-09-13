@@ -128,6 +128,41 @@ python -m src.evaluate
 **Saved in:** _logs/eval.txt_
 
 
+### Visualization
+```
+python -m src.visualize
+```
+
+Options:
+```
+--mistakes_only        # Show only incorrect predictions
+--num_images           # Number of images to display
+```
+
+
+Generated plots saved in _logs/_:
+```
+training_curves.png
+confusion_matrix.png
+roc_curve.png
+precision_recall_curve.png
+predictions.png
+```
+
+
+### Testing
+
+Run all tests:
+```
+pytest --cov=src
+```
+
+### Model Details
+Architecture: ResNet18 <br>
+Transfer learning (ImageNet pretrained) <br>
+Final layer adapted for binary classification <br>
+
+
 ### Training Performance Benchmark
 An additional part of the project investigates GPU training performance and data-loading efficiency. <br>
 Running the benchmark:
@@ -220,37 +255,3 @@ I tested the Automatic Mixed Precision (AMP) during the training, making the fol
 * summing up, no net effect on the throughput and computation time
 * GPU average and max utilization are also positively impacted by AMP (~-30% and ~-42% respectively)
 * concluding: with AMP, the pipeline seeks an accelerated GPU computation, but an higher waiting time for DataLoader.
-
-### Visualization
-```
-python -m src.visualize
-```
-
-Options:
-```
---mistakes_only        # Show only incorrect predictions
---num_images           # Number of images to display
-```
-
-
-Generated plots saved in _logs/_:
-```
-training_curves.png
-confusion_matrix.png
-roc_curve.png
-precision_recall_curve.png
-predictions.png
-```
-
-
-### Testing
-
-Run all tests:
-```
-pytest --cov=src
-```
-
-### Model Details
-Architecture: ResNet18 <br>
-Transfer learning (ImageNet pretrained) <br>
-Final layer adapted for binary classification <br>
