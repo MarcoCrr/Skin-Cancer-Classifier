@@ -225,6 +225,129 @@ def benchmark_training(
     return results
 
 
+def profile_training(
+    model,
+    dataloader,
+    device,
+    warmup_batches=10,
+    profile_batches=5,
+    use_amp=False,
+    output_path="logs/benchmarks/profile_trace.json",
+):
+    """
+    Profile a short PyTorch training run using PyTorch Profiler.
+
+    The profiler records CPU and CUDA activity, tensor shapes, and
+    memory usage. A short profiling window is used because profiling
+    introduces significant overhead.
+
+    Args:
+        model (torch.nn.Module): Model to profile.
+        dataloader (DataLoader): Training dataloader.
+        device (str): Device used for profiling.
+        warmup_batches (int): Number of warm-up batches.
+        profile_batches (int): Number of profiled batches.
+        use_amp (bool): Enable automatic mixed precision.
+        output_path (str): Path for the Chrome trace JSON file.
+    """
+
+    from torch.profiler import profile, ProfilerActivity
+
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.fc.parameters(), lr=0.001)
+
+    scaler = torch.amp.GradScaler(
+        "cuda",
+        enabled=use_amp
+    )
+
+    model.train()
+
+    data_iterator = iter(dataloader)
+
+    # ---------------------------------------------------------
+    # Warm-up
+    # ---------------------------------------------------------
+    for _ in range(warmup_batches):
+
+        try:
+            images, labels = next(data_iterator)
+        except StopIteration:
+            data_iterator = iter(dataloader)
+            images, labels = next(data_iterator)
+
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
+
+        optimizer.zero_grad()
+
+        with torch.autocast(
+            device_type="cuda",
+            dtype=torch.float16,
+            enabled=use_amp
+        ):
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+    # ---------------------------------------------------------
+    # Profiling
+    # ---------------------------------------------------------
+    with profile(
+        activities=[
+            ProfilerActivity.CPU,
+            ProfilerActivity.CUDA,
+        ],
+        record_shapes=True,
+        profile_memory=True,
+    ) as prof:
+
+        for _ in range(profile_batches):
+
+            try:
+                images, labels = next(data_iterator)
+            except StopIteration:
+                data_iterator = iter(dataloader)
+                images, labels = next(data_iterator)
+
+            images = images.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
+
+            optimizer.zero_grad()
+
+            with torch.autocast(
+                device_type="cuda",
+                dtype=torch.float16,
+                enabled=use_amp
+            ):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            prof.step()
+
+    # ---------------------------------------------------------
+    # Export trace
+    # ---------------------------------------------------------
+    prof.export_chrome_trace(str(output_path))
+
+    print("\nProfiler summary:")
+    print(
+        prof.key_averages().table(
+            sort_by="cuda_time_total",
+            row_limit=20
+        )
+    )
+
+    print(f"\nProfiler trace saved to: {output_path}")
+
+
 def format_results(results, device, batch_size, num_workers, session_id, use_amp=False):
     """
     Print benchmark results in a human-readable format.
@@ -485,24 +608,30 @@ def main():
     )
 
     parser.add_argument(
-    "--num-workers",
-    type=int,
-    default=5,
-    help="Number of DataLoader worker processes."
+        "--num-workers",
+        type=int,
+        default=5,
+        help="Number of DataLoader worker processes."
     )
 
     parser.add_argument(
-    "--amp",
-    action="store_true",
-    help="Enable automatic mixed precision."
+        "--amp",
+        action="store_true",
+        help="Enable automatic mixed precision."
     )
 
     parser.add_argument(
-    "--session-id",
-    type=str,
-    default=None,
-    help=("Identifier grouping related benchmark runs. "
-        "If omitted, a unique session ID is generated.")
+        "--session-id",
+        type=str,
+        default=None,
+        help=("Identifier grouping related benchmark runs. "
+            "If omitted, a unique session ID is generated.")
+    )
+
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Run a short PyTorch profiling session."
     )
 
 
@@ -534,6 +663,24 @@ def main():
 
     warmup_batches = args.warmup_batches
     benchmark_batches = args.benchmark_batches
+
+    if args.profile:
+        profile_path = benchmark_dir / (
+            f"profile_"
+            f"{'amp' if args.amp else 'fp32'}_"
+            f"{timestamp}.json"
+        )
+
+        profile_training(
+            model,
+            train_loader,
+            device,
+            warmup_batches=args.warmup_batches,
+            profile_batches=5,
+            use_amp=args.amp,
+            output_path=profile_path,
+        )
+        return
 
     # Start CPU and GPU monitoring 
     monitor = SystemMonitor()
