@@ -23,7 +23,8 @@ def collect_predictions(model, dataloader, device):
 
     with torch.no_grad():
         for images, labels in dataloader:
-            images, labels = images.to(device), labels.to(device)
+            images = images.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
             outputs = model(images)
             _, preds = torch.max(outputs, 1)
 
@@ -113,7 +114,7 @@ def main():
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    _, val_loader = get_dataloaders("data/train", "data/val")
+    _, val_loader = get_dataloaders("data/train", "data/val", batch_size=32, num_workers=5)
 
     model = load_model("models/best_model.pth", device)
 
