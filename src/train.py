@@ -18,7 +18,8 @@ def train(config):
     train_loader, val_loader = get_dataloaders(
         config["data"]["train_dir"],
         config["data"]["val_dir"],
-        batch_size=config["data"]["batch_size"]
+        batch_size=config["data"]["batch_size"],
+        num_workers=config["data"]["num_workers"]
     )
 
     model = get_model()

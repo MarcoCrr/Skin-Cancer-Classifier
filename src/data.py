@@ -8,8 +8,8 @@ with open("configs/config.yaml", "r") as f:
 
 def get_dataloaders(train_dir,
                     val_dir,
-                    batch_size=config["data"]["batch_size"],
-                    num_workers=5):
+                    batch_size,
+                    num_workers):
     transform = transforms.Compose([
         transforms.Resize((224,224)),
         transforms.RandomHorizontalFlip(),

@@ -1,7 +1,8 @@
 data:
   train_dir: data/train
   val_dir: data/val
-  batch_size: 16
+  batch_size: 32
+  num_workers: 5
 
 model:
   num_classes: 2
