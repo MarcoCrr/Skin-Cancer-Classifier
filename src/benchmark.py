@@ -38,7 +38,7 @@ def benchmark_training(
     warmup_batches=10,
     benchmark_batches=50,
     use_amp=False
-):
+    ):
     """
     Benchmark the main stages of a PyTorch training loop.
 
@@ -84,7 +84,7 @@ def benchmark_training(
             device_type="cuda",
             dtype=torch.float16,
             enabled=use_amp
-):
+            ):
             outputs = model(images)
             loss = criterion(outputs, labels)
 
