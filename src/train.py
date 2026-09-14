@@ -43,11 +43,15 @@ def train(config):
 
     for epoch in range(1, epochs+1):
 
-        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler, use_amp)
-        val_acc = evaluate(model, val_loader, device)
+        train_loss, train_acc = train_one_epoch(
+            model, train_loader, optimizer, criterion, device, scaler, use_amp
+            )
+        val_loss, val_acc = evaluate(
+            model, val_loader, criterion, device, use_amp
+            )
 
-        line = f"{epoch},{train_loss},{val_acc}\n" # easy to parse
-        line_info = f"Epoch {epoch}: Train Loss={train_loss:.4f}, Val Acc={val_acc:.4f}"
+        line = f"{epoch}, {train_loss}, {train_acc}, {val_loss}, {val_acc}\n" # easy to parse
+        line_info = f"Epoch {epoch}: Train Loss={train_loss:.4f}, Train Acc={train_acc:.4f}, Val Loss={val_loss:.4f}, Val Acc={val_acc:.4f}"
         with open("logs/train_log.txt", "a") as f:
             f.write(line)
         print(line_info)
