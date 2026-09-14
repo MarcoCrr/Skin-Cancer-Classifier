@@ -1,7 +1,7 @@
 import torch
 
 
-def train_one_epoch(model, dataloader, optimizer, criterion, device):
+def train_one_epoch(model, dataloader, optimizer, criterion, device, scaler, use_amp):
     model.train()
     total_loss = 0
 
@@ -9,11 +9,18 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
         images, labels = images.to(device), labels.to(device)
 
         optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
 
-        loss.backward()
-        optimizer.step()
+        with torch.autocast(
+                    device_type="cuda",
+                    dtype=torch.float16,
+                    enabled=use_amp
+                    ):
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         total_loss += loss.item()
 

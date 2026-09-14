@@ -32,6 +32,9 @@ def train(config):
         weight_decay=config["training"]["weight_decay"]
     )
 
+    use_amp = config["training"]["use_amp"]
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+
     epochs = config["training"]["epochs"]
     patience = config["training"]["early_stopping_patience"]
 
@@ -40,7 +43,7 @@ def train(config):
 
     for epoch in range(1, epochs+1):
 
-        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler, use_amp)
         val_acc = evaluate(model, val_loader, device)
 
         line = f"{epoch},{train_loss},{val_acc}\n" # easy to parse
