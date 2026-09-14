@@ -4,6 +4,7 @@ import torch
 def train_one_epoch(model, dataloader, optimizer, criterion, device, scaler, use_amp):
     model.train()
     total_loss = 0
+    correct, total = 0, 0
 
     for images, labels in dataloader:
         images = images.to(device, non_blocking=True)
