@@ -6,8 +6,10 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-DeepLearning-red)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-An ent-to-end, PyTorch-based image classification pipeline for distinguishing **benign** and **malignant** skin lesions using transfer learning with **ResNet18** and the HAM10000 dataset.
-The project emphasizes a clean architecture and contains model evaluation, visualization, and testing. Built also to take into account potential hardware memory constraints by selecting the dataset size and applying some data transformations. GPU training performance and data-loading efficiency were also inspected and optimized for this reason, as discussed in the [Training Performance Benchmark](#training-performance-benchmark) section. <br>
+An end-to-end, PyTorch-based image classification pipeline for distinguishing **benign** and **malignant** skin lesions using transfer learning with **ResNet18** and the HAM10000 dataset.
+
+The project emphasizes clean architecture and includes model evaluation, visualization, and testing. It also takes potential hardware memory constraints into account through configurable dataset size and data transformations. GPU training performance and data-loading efficiency were additionally benchmarked and investigated, as discussed in the [Training Performance Benchmark](#training-performance-benchmark) section.
+
 
 ## Features
 ### End-to-end ML pipeline:
@@ -244,23 +246,15 @@ Output example:
         Maximum:          1173.19 MB
     -------------------------------------------------------
 ```
+
 #### Comments
-From internal tests varying the number of batches and workers, (with my current setup) I mainly observed that:
-* for num_workers=0 the data loading is a huge bottleneck, dominating over the GPU usage
-* a sweetspot of num_workers=5 has been found, since the throughput jumps from ~150–180 images/s (num_workers=0) to ~800+ images/s (num_workers>5). The data loading time decreases by a factor of 100.
-* varying the batch size does not impact the throughput as drastically as the number of workers. batch_size=32 is a good tradeoff, which also keeps the GPU memory usage and utilization at normal values.
-After these tests, I concluded that num_workers=5 and batch_size=32 are my optimal parameters. <br>
 
-I proceeded by setting pin_memory=True, persistent_workers=True in DataLoader and non_blocking=True in Pytorch, all tested singularly and together to track the performance changes. This reduced CPU to GPU transfer time substantially, but increased measured data-loading time by a similar amount, with no net effect.
+Internal benchmarks showed that data loading is the main bottleneck when `num_workers=0`, with throughput around ~150–180 images/s. Increasing the number of workers produced a substantial improvement, reaching **800+ images/s**, with `num_workers=5` providing a good tradeoff for my setup. Batch size had a smaller impact on throughput; `batch_size=32` was selected as a good compromise between performance and GPU memory usage.
 
-(**merge the next two bullet lists for more clarity!**) <br>
-I tested the Automatic Mixed Precision (AMP) during the training, making the following conclusions:
-* AMP accelerates GPU forward computation (~ +40%) and reduces PyTorch memory consumption (~-30%). Backward and optimizer time are increased in a proportional way
-* data_time with AMP increased by ~+127%: the training loop has to wait the next batch for more time (AND not AMP making the data transfer slower, I elaborate more below)
-* summing up, no net effect on the throughput and computation time
-* GPU average and max utilization are also positively impacted by AMP (~-30% and ~-42% respectively)
-* concluding: with AMP, the pipeline seeks an accelerated GPU computation, but an higher waiting time for DataLoader.
+I then tested `pin_memory=True`, `persistent_workers=True`, and `non_blocking=True` individually and together. While these settings substantially reduced CPU-to-GPU transfer time, the measured data-loading wait increased by a similar amount, resulting in no meaningful throughput improvement.
 
-I further investigated this behavior by using the Pytorch Profiler.
-* the ~+41% forward-time improvement with AMP is given by a proportional decrease of convolution, ReLU and BatchNorm operation time.
-* regarding the sharp increase in *data_time*, the profiling shows that the host-to-device transfer is basically identical, meaning that AMP does not meake the data transfer slower. I interpret it as the DataLoader spending more time waiting for the next batch, since the GPU is now faster at processing them. This is supported by a lower GPU utilization with AMP.
+I also evaluated **Automatic Mixed Precision (AMP)**. AMP reduced GPU forward-computation time by ~40% and PyTorch peak memory consumption by ~30%, while increasing backward and optimizer overhead. However, overall throughput remained essentially unchanged. The observed `data_time` increased by ~127%, suggesting that the faster GPU computation exposed more waiting for the next batch rather than making data transfer slower. GPU utilization also decreased, supporting this interpretation.
+
+To investigate this further, I used the **PyTorch Profiler**. The profiling confirmed that the ~41% forward-time improvement comes from faster convolution, ReLU, and BatchNorm operations when using reduced-precision GPU kernels. Host-to-device transfer time remained essentially unchanged between FP32 and AMP, confirming that AMP does not significantly slow data transfer.
+
+Overall, the benchmark identified `num_workers=5` and `batch_size=32` as the best parameters for my current setup. AMP successfully reduces GPU computation time and memory usage, but the current data pipeline prevents these improvements from translating into higher throughput.
