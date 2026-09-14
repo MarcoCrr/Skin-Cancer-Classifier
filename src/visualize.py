@@ -239,52 +239,97 @@ def load_training_log(log_path):
     Load training log file.
 
     Expected format per line:
-        epoch,train_loss,val_acc
+        epoch, tr_loss, tr_acc, val_loss, val_acc
 
     Args:
         log_path (str): Path to log file.
 
     Returns:
-        tuple: (epochs, train_losses, val_accuracies)
+        tuple: (epochs, train_losses, train_accuracies, val_losses, val_accuracies)
     """
     epochs = []
     train_losses = []
+    train_accuracies = []
+    val_losses = []
     val_accuracies = []
 
     with open(log_path, "r") as f:
         for line in f:
-            epoch, loss, acc = line.strip().split(",")
+            epoch, tr_loss, tr_acc, val_loss, val_acc = line.strip().split(",")
             epochs.append(int(epoch))
-            train_losses.append(float(loss))
-            val_accuracies.append(float(acc))
+            train_losses.append(float(tr_loss))
+            train_accuracies.append(float(tr_acc))
+            val_losses.append(float(val_loss))
+            val_accuracies.append(float(val_acc))
 
-    return epochs, train_losses, val_accuracies
+    return epochs, train_losses, train_accuracies, val_losses, val_accuracies
 
 
-def plot_training_curves(epochs, train_losses, val_accuracies,
+def plot_training_curves(epochs, train_loss, train_acc, val_loss, val_acc,
                          save_path="logs/training_curves.png"):
     """
     Plot training loss and validation accuracy over epochs.
 
     Args:
         epochs (list)
-        train_losses (list)
-        val_accuracies (list)
+        train_loss (list)
+        train_acc (list)
+        val_loss (list)
+        val_acc (list)
         save_path (str)
     """
-    plt.figure()
+    plt.figure(figsize=(12, 5))
 
-    plt.plot(epochs, train_losses, label="Train Loss")
-    plt.plot(epochs, val_accuracies, label="Val Accuracy")
-
+    # Plot Loss
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, train_loss, label="Train Loss")
+    plt.plot(epochs, val_loss, label="Val Loss")
+    plt.axvline(epochs[-1], color='red', linestyle='--', label=f'Early Stop@{epochs[-1]}')
     plt.xlabel("Epoch")
-    plt.ylabel("Value")
-    plt.title("Training Curves")
+    plt.ylabel("Loss")
+    plt.title("Training and Validation Loss")
     plt.legend()
 
+    # Plot Accuracy
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, train_acc, label="Train Acc")
+    plt.plot(epochs, val_acc, label="Val Acc")
+    plt.axvline(epochs[-1], color='red', linestyle='--', label=f'Early Stop@{epochs[-1]}')
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training and Validation Accuracy")
+    plt.legend()
+
+    plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
     print(f"Training curves saved to {save_path}")
+
+
+# def plot_training_curves(epochs, train_losses, val_accuracies,
+#                          save_path="logs/training_curves.png"):
+#     """
+#     Plot training loss and validation accuracy over epochs.
+
+#     Args:
+#         epochs (list)
+#         train_losses (list)
+#         val_accuracies (list)
+#         save_path (str)
+#     """
+#     plt.figure()
+
+#     plt.plot(epochs, train_losses, label="Train Loss")
+#     plt.plot(epochs, val_accuracies, label="Val Accuracy")
+
+#     plt.xlabel("Epoch")
+#     plt.ylabel("Value")
+#     plt.title("Training Curves")
+#     plt.legend()
+
+#     plt.savefig(save_path)
+#     plt.close()
+#     print(f"Training curves saved to {save_path}")
 
 
 def plot_precision_recall_curve(labels, probs,
@@ -342,7 +387,8 @@ def run_visualization(config_path, model_path,
     _, val_loader = get_dataloaders(
         config["data"]["train_dir"],
         config["data"]["val_dir"],
-        batch_size=8
+        batch_size=32,
+        num_workers=5
     )
 
     model = load_model(model_path, device)
@@ -362,8 +408,8 @@ def run_visualization(config_path, model_path,
         max_images=num_images
     )
     try:
-        epochs, losses, accs = load_training_log("logs/train_log.txt")
-        plot_training_curves(epochs, losses, accs)
+        epochs, tr_loss, tr_acc, val_loss, val_acc = load_training_log("logs/train_log.txt")
+        plot_training_curves(epochs, tr_loss, tr_acc, val_loss, val_acc)
     except FileNotFoundError:
         print("Training log not found, skipping training curves.")
 
