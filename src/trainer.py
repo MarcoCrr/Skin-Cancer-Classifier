@@ -6,7 +6,8 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device, scaler, use
     total_loss = 0
 
     for images, labels in dataloader:
-        images, labels = images.to(device), labels.to(device)
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
 
         optimizer.zero_grad()
 
