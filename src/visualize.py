@@ -306,32 +306,6 @@ def plot_training_curves(epochs, train_loss, train_acc, val_loss, val_acc,
     print(f"Training curves saved to {save_path}")
 
 
-# def plot_training_curves(epochs, train_losses, val_accuracies,
-#                          save_path="logs/training_curves.png"):
-#     """
-#     Plot training loss and validation accuracy over epochs.
-
-#     Args:
-#         epochs (list)
-#         train_losses (list)
-#         val_accuracies (list)
-#         save_path (str)
-#     """
-#     plt.figure()
-
-#     plt.plot(epochs, train_losses, label="Train Loss")
-#     plt.plot(epochs, val_accuracies, label="Val Accuracy")
-
-#     plt.xlabel("Epoch")
-#     plt.ylabel("Value")
-#     plt.title("Training Curves")
-#     plt.legend()
-
-#     plt.savefig(save_path)
-#     plt.close()
-#     print(f"Training curves saved to {save_path}")
-
-
 def plot_precision_recall_curve(labels, probs,
                                 save_path="logs/precision_recall_curve.png"):
     """
