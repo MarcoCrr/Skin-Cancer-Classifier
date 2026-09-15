@@ -62,8 +62,8 @@ def test_train_runs_and_returns_accuracy(
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
 
-    with patch("src.train.evaluate", return_value=0.5):
-        with patch("src.train.train_one_epoch", return_value=1.0):
+    with patch("src.train.evaluate", return_value=(0.5, 0.5)):
+        with patch("src.train.train_one_epoch", return_value=(1.0, 0.5)):
             with patch("src.train.should_stop_early", return_value=(True, 0)):
                 best_acc = train(dummy_config)
 
@@ -83,8 +83,8 @@ def test_model_saved_only_on_improvement(
     # First call improves, second does not
     should_stop_side_effect = [(True, 0), (False, 1), (False, 2)]
 
-    with patch("src.train.evaluate", return_value=0.5), \
-         patch("src.train.train_one_epoch", return_value=1.0), \
+    with patch("src.train.evaluate", return_value=(0.5, 0.5)), \
+         patch("src.train.train_one_epoch", return_value=(1.0, 0.5)), \
          patch("src.train.should_stop_early", side_effect=should_stop_side_effect):
 
         train(dummy_config)
@@ -104,9 +104,9 @@ def test_early_stopping_triggers(
     dummy_config["training"]["epochs"] = 10
     dummy_config["training"]["early_stopping_patience"] = 1
 
-    # Force no improvement → counter increases
-    with patch("src.train.evaluate", return_value=0.5), \
-         patch("src.train.train_one_epoch", return_value=1.0), \
+    # Force no improvement -> counter increases
+    with patch("src.train.evaluate", return_value=(0.5, 0.5)), \
+         patch("src.train.train_one_epoch", return_value=(1.0, 0.5)), \
          patch("src.train.should_stop_early", return_value=(False, 2)):
 
         best_acc = train(dummy_config)
@@ -126,8 +126,8 @@ def test_device_fallback_to_cpu(
     dummy_config["system"]["device"] = "cuda"
 
     with patch("torch.cuda.is_available", return_value=False), \
-         patch("src.train.evaluate", return_value=0.5), \
-         patch("src.train.train_one_epoch", return_value=1.0), \
+         patch("src.train.evaluate", return_value=(0.5, 0.5)), \
+         patch("src.train.train_one_epoch", return_value=(1.0, 0.5)), \
          patch("src.train.should_stop_early", return_value=(True, 0)):
 
         best_acc = train(dummy_config)
@@ -145,8 +145,8 @@ def test_train_loop_multiple_epochs(
 
     dummy_config["training"]["epochs"] = 3
 
-    with patch("src.train.evaluate", return_value=0.6) as mock_eval, \
-         patch("src.train.train_one_epoch", return_value=1.0) as mock_train_epoch, \
+    with patch("src.train.evaluate", return_value=(0.6, 0.5)) as mock_eval, \
+         patch("src.train.train_one_epoch", return_value=(1.0, 0.5)) as mock_train_epoch, \
          patch("src.train.should_stop_early", return_value=(True, 0)):
 
         train(dummy_config)
