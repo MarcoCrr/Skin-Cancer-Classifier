@@ -16,12 +16,14 @@ def dummy_config():
         "data": {
             "train_dir": "dummy_train",
             "val_dir": "dummy_val",
-            "batch_size": 4
+            "batch_size": 4,
+            "num_workers": 1
         },
         "training": {
             "epochs": 3,
             "learning_rate": 0.001,
             "weight_decay": 0.0,
+            "use_amp": "True",
             "early_stopping_patience": 2
         },
         "model": {

@@ -28,13 +28,15 @@ def test_load_config(tmp_path):
 
 def test_load_training_log(tmp_path):
     log_file = tmp_path / "log.txt"
-    log_file.write_text("0,0.5,0.6\n1,0.4,0.7\n")
+    log_file.write_text("0, 0.5, 0.6, 0.1, 0.3\n 1, 0.4 ,0.7, 0.2, 0.4\n")
 
-    epochs, losses, accs = load_training_log(log_file)
+    epochs, train_losses, train_accuracies, val_losses, val_accuracies = load_training_log(log_file)
 
     assert epochs == [0, 1]
-    assert losses == [0.5, 0.4]
-    assert accs == [0.6, 0.7]
+    assert train_losses == [0.5, 0.4]
+    assert train_accuracies == [0.6, 0.7]
+    assert val_losses == [0.1, 0.2]
+    assert val_accuracies == [0.3, 0.4]
 
 
 def test_plot_roc_curve(tmp_path):
@@ -70,12 +72,14 @@ def test_plot_confusion_matrix(tmp_path):
 
 def test_plot_training_curves(tmp_path):
     epochs = [0, 1, 2]
-    losses = [0.5, 0.4, 0.3]
-    accs = [0.6, 0.7, 0.8]
+    train_loss = [0.5, 0.4, 0.3]
+    train_acc = [0.6, 0.7, 0.8]
+    val_loss = [0.1, 0.2, 0.3]
+    val_acc = [0.3, 0.4, 0.5]
 
     out = tmp_path / "curves.png"
 
-    plot_training_curves(epochs, losses, accs, save_path=out)
+    plot_training_curves(epochs, train_loss, train_acc, val_loss, val_acc, save_path=out)
 
     assert out.exists()
 

@@ -33,8 +33,9 @@ def test_train_one_epoch_runs():
 
     optimizer = torch.optim.Adam(model.parameters())
     criterion = torch.nn.CrossEntropyLoss()
+    scaler = torch.amp.GradScaler("cuda", enabled=False)
 
-    loss = train_one_epoch(model, loader, optimizer, criterion, "cpu")
+    loss = train_one_epoch(model, loader, optimizer, criterion, "cpu", scaler=scaler, use_amp=False)
 
     assert isinstance(loss, float)
     assert loss > 0
@@ -46,10 +47,11 @@ def test_train_one_epoch_updates_model():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     criterion = torch.nn.CrossEntropyLoss()
+    scaler = torch.amp.GradScaler("cuda", enabled=False)
 
     before = model.fc.weight.clone()
 
-    train_one_epoch(model, loader, optimizer, criterion, "cpu")
+    train_one_epoch(model, loader, optimizer, criterion, "cpu", scaler=scaler, use_amp=False)
 
     after = model.fc.weight
 
@@ -61,7 +63,7 @@ def test_evaluate_returns_valid_accuracy():
     model = DummyModel()
     loader = get_dummy_loader()
 
-    acc = evaluate(model, loader, "cpu")
+    acc = evaluate(model, loader, criterion=torch.nn.CrossEntropyLoss(), device="cpu", use_amp=False)
 
     assert 0.0 <= acc <= 1.0
 
@@ -79,7 +81,7 @@ def test_evaluate_perfect_accuracy():
     y = torch.zeros(10, dtype=torch.long)
     loader = torch.utils.data.DataLoader(list(zip(x, y)), batch_size=2)
 
-    acc = evaluate(model, loader, "cpu")
+    acc = evaluate(model, loader, criterion=torch.nn.CrossEntropyLoss(), device="cpu", use_amp=False)
 
     assert acc == 1.0
 

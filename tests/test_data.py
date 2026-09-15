@@ -34,7 +34,8 @@ def test_get_dataloaders_returns_loaders(tmp_path):
     train_loader, val_loader = get_dataloaders(
         tmp_path / "train",
         tmp_path / "val",
-        batch_size=2
+        batch_size=2,
+        num_workers=1
     )
 
     assert isinstance(train_loader, torch.utils.data.DataLoader)
@@ -48,7 +49,8 @@ def test_dataloader_batch_size(tmp_path):
     train_loader, _ = get_dataloaders(
         tmp_path / "train",
         tmp_path / "val",
-        batch_size=batch_size
+        batch_size=batch_size,
+        num_workers=1
     )
 
     batch = next(iter(train_loader))
@@ -63,7 +65,8 @@ def test_dataloader_output_shape(tmp_path):
     train_loader, _ = get_dataloaders(
         tmp_path / "train",
         tmp_path / "val",
-        batch_size=2
+        batch_size=2,
+        num_workers=1
     )
 
     images, labels = next(iter(train_loader))
@@ -79,7 +82,8 @@ def test_class_labels(tmp_path):
     train_loader, _ = get_dataloaders(
         tmp_path / "train",
         tmp_path / "val",
-        batch_size=2
+        batch_size=2,
+        num_workers=1
     )
 
     _, labels = next(iter(train_loader))
