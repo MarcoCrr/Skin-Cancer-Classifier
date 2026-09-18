@@ -14,6 +14,7 @@ training:
   weight_decay: 0.0001
   use_amp: True
   early_stopping_patience: 3
+  checkpoint_path: models/best_model.pth
 
 system:
   device: cuda
