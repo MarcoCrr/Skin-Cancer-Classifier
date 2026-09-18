@@ -23,8 +23,9 @@ def dummy_config():
             "epochs": 3,
             "learning_rate": 0.001,
             "weight_decay": 0.0,
-            "use_amp": "True",
-            "early_stopping_patience": 2
+            "use_amp": True,
+            "early_stopping_patience": 2,
+            "checkpoint_path": "models/best_model.pth"
         },
         "model": {
             "num_classes": 2
@@ -57,10 +58,11 @@ class DummyModel(torch.nn.Module):
 @patch("src.train.get_model")
 @patch("src.train.torch.save")
 def test_train_runs_and_returns_accuracy(
-    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader
+    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader, tmp_path
 ):
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
+    dummy_config["training"]["checkpoint_path"] = str(tmp_path/"test_model.pth")
 
     with patch("src.train.evaluate", return_value=(0.5, 0.5)):
         with patch("src.train.train_one_epoch", return_value=(1.0, 0.5)):
@@ -75,10 +77,11 @@ def test_train_runs_and_returns_accuracy(
 @patch("src.train.get_model")
 @patch("src.train.torch.save")
 def test_model_saved_only_on_improvement(
-    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader
+    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader, tmp_path
 ):
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
+    dummy_config["training"]["checkpoint_path"] = str(tmp_path/"test_model.pth")
 
     # First call improves, second does not
     should_stop_side_effect = [(True, 0), (False, 1), (False, 2)]
@@ -95,14 +98,16 @@ def test_model_saved_only_on_improvement(
 
 @patch("src.train.get_dataloaders")
 @patch("src.train.get_model")
+@patch("src.train.torch.save")
 def test_early_stopping_triggers(
-    mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader
+    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader, tmp_path
 ):
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
 
     dummy_config["training"]["epochs"] = 10
     dummy_config["training"]["early_stopping_patience"] = 1
+    dummy_config["training"]["checkpoint_path"] = str(tmp_path/"test_model.pth")
 
     # Force no improvement -> counter increases
     with patch("src.train.evaluate", return_value=(0.5, 0.5)), \
@@ -117,13 +122,15 @@ def test_early_stopping_triggers(
 
 @patch("src.train.get_dataloaders")
 @patch("src.train.get_model")
+@patch("src.train.torch.save")
 def test_device_fallback_to_cpu(
-    mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader
+    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader, tmp_path
 ):
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
 
     dummy_config["system"]["device"] = "cuda"
+    dummy_config["training"]["checkpoint_path"] = str(tmp_path/"test_model.pth")
 
     with patch("torch.cuda.is_available", return_value=False), \
          patch("src.train.evaluate", return_value=(0.5, 0.5)), \
@@ -137,13 +144,15 @@ def test_device_fallback_to_cpu(
 
 @patch("src.train.get_dataloaders")
 @patch("src.train.get_model")
+@patch("src.train.torch.save")
 def test_train_loop_multiple_epochs(
-    mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader
+    mock_save, mock_get_model, mock_get_dataloaders, dummy_config, dummy_loader, tmp_path
 ):
     mock_get_dataloaders.return_value = (dummy_loader, dummy_loader)
     mock_get_model.return_value = DummyModel()
 
     dummy_config["training"]["epochs"] = 3
+    dummy_config["training"]["checkpoint_path"] = str(tmp_path/"test_model.pth")
 
     with patch("src.train.evaluate", return_value=(0.6, 0.5)) as mock_eval, \
          patch("src.train.train_one_epoch", return_value=(1.0, 0.5)) as mock_train_epoch, \
@@ -154,3 +163,4 @@ def test_train_loop_multiple_epochs(
     # Ensure loop actually ran multiple times
     assert mock_eval.call_count == 3
     assert mock_train_epoch.call_count == 3
+    assert mock_save.call_count == 3
